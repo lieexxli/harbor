@@ -1,0 +1,53 @@
+{
+  "checks": {
+    "behavior_in_task_description": {
+      "explanation": "The instruction explicitly specifies /app/convert.py, the convert() function signature, both direction values, and kwargs behavior. It references the OpenAI Chat Completions and Anthropic Messages APIs as the normative specifications. Per the criterion, referencing well-known public APIs is acceptable\u2014the agent is expected to consult those external specs.",
+      "outcome": "pass"
+    },
+    "behavior_in_tests": {
+      "explanation": "The instruction requires the returned dict to 'conform to' the OpenAI Chat Completions API and Anthropic Messages API, which is a broad requirement. Tests only cover basic text messages, system messages, tool calls, tool results, and tool definitions. Many API features remain untested: multimodal content (images), various other content block types, mixed content scenarios, and edge cases. An implementation passing these tests might not fully conform to the APIs for untested message types.",
+      "outcome": "fail"
+    },
+    "informative_test_structure": {
+      "explanation": "Tests are well-organized with clear section comments (e.g., '# OpenAI \u2192 Anthropic', '# Tests: Anthropic \u2192 OpenAI'), descriptive test function names (e.g., test_oai_to_anthropic_system_extracted), named fixtures at the top, and helpful assertion messages explaining requirements. The structure is readable and maintainable.",
+      "outcome": "pass"
+    },
+    "anti_cheating_measures": {
+      "explanation": "The Dockerfile does not expose solutions or tests. Test data is embedded only in test files. No mutable external resources, ground-truth files in the image, or obvious shortcuts that would allow bypassing the intended conversion logic.",
+      "outcome": "pass"
+    },
+    "structured_data_schema": {
+      "explanation": "The function signature convert(messages: list[dict], direction: str, **kwargs) -> dict is explicitly documented in instruction.md. The task references the OpenAI Chat Completions API and Anthropic Messages API as normative schemas. Per the criterion, referencing well-known public specifications like these official APIs is acceptable.",
+      "outcome": "pass"
+    },
+    "pinned_dependencies": {
+      "explanation": "All Python dependencies are pinned in tests/test.sh: pytest==8.4.1, pytest-json-ctrf==0.3.5, anthropic==0.40.0, openai==1.56.0. The uv installer version is also pinned to 0.9.7. Apt packages (curl) do not require pinning per the criterion.",
+      "outcome": "pass"
+    },
+    "typos": {
+      "explanation": "No typos found in filenames (/app/convert.py), paths, commands (pytest, uvx, curl), direction strings ('openai_to_anthropic', 'anthropic_to_openai'), variable names, or import statements that would cause failures or confusion.",
+      "outcome": "pass"
+    },
+    "tests_or_solution_in_image": {
+      "explanation": "The Dockerfile (environment/Dockerfile) only contains FROM python:3.13-slim-bookworm and WORKDIR /app. It does not COPY tests/ or solution/ directories into the runtime image.",
+      "outcome": "pass"
+    },
+    "test_deps_in_image": {
+      "explanation": "Test-only dependencies (pytest, pytest-json-ctrf, anthropic, openai) are installed in tests/test.sh via uvx during test execution, not baked into the Docker image build. The Dockerfile contains no dependency installations.",
+      "outcome": "pass"
+    },
+    "hardcoded_solution": {
+      "explanation": "The solution (solution/solve.sh) implements actual conversion logic: branching by direction, extracting system messages, converting between tool_calls and tool_use blocks, transforming tool result formats, parsing/serializing JSON for tool arguments, and mapping tool definition schemas. It does not simply echo or cat a hardcoded final answer.",
+      "outcome": "pass"
+    },
+    "file_reference_mentioned": {
+      "explanation": "The instruction.md explicitly states 'Implement /app/convert.py' on line 1, clearly naming the file that tests import and verify. The filename is unambiguous and matches what the tests check.",
+      "outcome": "pass"
+    },
+    "difficulty_appropriate": {
+      "explanation": "Declared as 'medium' with 30-minute expert estimate in task.toml. The task requires domain-specific knowledge of both OpenAI and Anthropic message API structures (system message placement, tool_calls vs tool_use blocks, content block types, schema differences) plus bidirectional transformation logic. Tests use pytest with multiple scenarios and SDK validation. This aligns with medium-tier tasks requiring domain knowledge AND system integration, matching examples like 'parsing multi-format data with schema mapping.'",
+      "outcome": "pass"
+    }
+  },
+  "estimated_cost_usd": 0.23429640000000002
+}
