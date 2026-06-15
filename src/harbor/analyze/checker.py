@@ -53,7 +53,7 @@ async def run_check(
         )
     )
 
-    result, _estimated_cost_usd = await query_agent(
+    result, estimated_cost_usd = await query_agent(
         prompt=prompt,
         model=model,
         cwd=str(task_dir),
@@ -64,7 +64,9 @@ async def run_check(
     )
 
     parsed = response_model.model_validate(result)
-    return QualityCheckResult(checks=parsed.model_dump())
+    return QualityCheckResult(
+        checks=parsed.model_dump(), estimated_cost_usd=estimated_cost_usd
+    )
 
 
 def _build_file_tree(task_dir: Path) -> str:

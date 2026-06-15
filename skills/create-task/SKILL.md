@@ -47,6 +47,23 @@ This is the prompt the agent receives. Help the user write it clearly:
 - **Specify expected outputs** — paths, formats, content
 - **Include constraints** — language, tools, approach
 - **Don't leak the tests** — describe what "done" looks like, not how you'll check it
+- **Calibrate information density to difficulty** — the more you spell out (exact API calls, formulas, step-by-step algorithm), the easier the task becomes. A one-sentence instruction that omits the "how" is often harder than a detailed spec, because the agent must research and reason rather than transcribe. Use these terminal-bench-2-1 examples as calibration anchors:
+
+  **Easy** (expert ~5–60 min): name the tool/domain, omit the "how"
+  - `fix-git` (5 min): 1 sentence, no hint about `git reflog` — agent must discover the recovery path
+  - `prove-plus-comm` (5 min): names Coq and the theorem, but not which tactics to use
+  - `overfull-hbox` (60 min): names LaTeX and the constraint, not which words to change
+
+  **Medium** (expert ~20–300 min): describe the interface/contract, omit the algorithm
+  - `break-filter-js-from-html` (20 min): describes the filter tool and the goal (XSS bypass), no hint about which HTML injection vector works
+  - `cancel-async-tasks` (120 min): specifies the exact function signature and the edge case (KeyboardInterrupt cleanup), but not which asyncio primitives to use
+
+  **Hard** (expert ~60 min–16 h): terse goal, deliberate ambiguity, deep domain expertise required
+  - `dna-assembly` (60 min): gives biological context and primer rules, but agent must know Golden Gate assembly, BsaI-HF v2 cut-site requirements, and primer3 flags
+  - `bn-fit-modify` (480 min): multi-step causal inference problem — agent must independently choose structure learning method, intervention approach, and sampling library
+  - `circuit-fibsqrt` (960 min): 1 paragraph, requires implementing fib(isqrt(N)) as a logic-gate circuit under a 32 000-line budget — no algorithmic hint
+
+  If your instruction reads like a tutorial with the answer embedded, it will score as easier than intended.
 
 Example (from the ssh-key-pair tutorial):
 ```markdown
@@ -139,11 +156,16 @@ Use when the verification is straightforward assertion-style Python. Default tem
 `tests/test.sh`:
 ```bash
 #!/bin/bash
-apt-get update && apt-get install -y curl
+apt-get update -qq
+apt-get install -y curl -qq
+
 curl -LsSf https://astral.sh/uv/0.9.7/install.sh | sh
 source $HOME/.local/bin/env
 
-uvx --with pytest==8.4.1 pytest /tests/test_outputs.py
+uvx \
+  --with pytest==8.4.1 \
+  --with pytest-json-ctrf==0.3.5 \
+  pytest --ctrf /logs/verifier/ctrf.json /tests/test_outputs.py -rA
 
 if [ $? -eq 0 ]; then
   echo 1 > /logs/verifier/reward.txt
@@ -151,6 +173,8 @@ else
   echo 0 > /logs/verifier/reward.txt
 fi
 ```
+
+`--ctrf /logs/verifier/ctrf.json` is required — Harbor reads CTRF output to populate per-test results in the job viewer. Add extra packages with `--with <pkg>==<version>` (all pinned).
 
 Example `tests/test_outputs.py`:
 ```python
@@ -299,7 +323,37 @@ For Reward Kit judges needing API keys:
 ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"
 ```
 
-## Step 7: Verify with the Oracle agent
+## Step 7: Quality-check with harbor check
+
+Before running the Oracle (which spins up a container), run a static quality check:
+
+```bash
+harbor check "<task-path>"
+```
+
+This uses an LLM to review all task files against a rubric covering instruction clarity,
+test coverage, anti-cheating, schema documentation, pinned dependencies, and difficulty
+calibration. Fix any `fail` items before moving on — they're cheaper to fix now than
+after an Oracle run reveals a broken test or a real agent exploits a loophole.
+
+The `difficulty_appropriate` criterion is especially useful: it will flag tasks that are
+pure scripting with no domain knowledge, or tasks where the instruction is so detailed
+that it effectively hands the agent the solution.
+
+**Run with multiple SDKs** — different models interpret the rubric differently; run both and compare:
+
+```bash
+harbor check "<task-path>" --sdk claude
+harbor check "<task-path>" --sdk codex --model gpt-5.5
+```
+
+**Known rubric limitation for external-API tasks**: if the instruction references a broad
+public API (e.g. "conform to the OpenAI Chat Completions API"), the `behavior_in_tests`
+criterion will persistently `fail` because no finite test suite can cover every API variant.
+This is a rubric limitation, not a task defect — accept it if the core scenarios are tested
+and both SDK checks agree on all other criteria.
+
+## Step 8: Verify with the Oracle agent
 
 ```bash
 harbor run -p "<task-path>" -a oracle
@@ -312,16 +366,20 @@ not, debug in this order:
 3. Are paths correct? (absolute vs relative)
 4. Are dependencies installed in the Dockerfile?
 
-## Step 8: Test with a real agent (optional)
+## Step 9: Test with a real agent (optional)
 
 ```bash
+# Claude Code (good general-purpose agent for coding tasks)
+harbor run -p "<task-path>" -a claude-code -m anthropic/claude-opus-4-8
+
+# Terminus (lighter-weight, faster iteration)
 harbor run -p "<task-path>" -a terminus-2 -m anthropic/claude-sonnet-4-6
 ```
 
 If the task is too easy (every model 1.0) or impossible (every model 0.0), consider 
 adjusting difficulty.
 
-## Step 9: Update README.md (always the final step)
+## Step 10: Update README.md (always the final step)
 
 `harbor task init` leaves `README.md` as a stub. Before wrapping up, populate it so
 future humans (and agents) can understand the task without reading every file.
@@ -468,6 +526,11 @@ aggregation strategy.
 - Forgetting `chmod +x solution/solve.sh` → Oracle agent fails
 - Leaving `keywords = []` in task.toml → task is invisible to registry search
 - Leaving `README.md` as a stub → teammates have no way to understand the task at a glance
+- `__pycache__/` left in task directory from local testing → `harbor check` flags it as an anti-cheating leak; delete before running check or submitting (`Remove-Item -Recurse __pycache__` / `rm -rf __pycache__`)
+- Omitting `--ctrf /logs/verifier/ctrf.json` from pytest invocation → per-test results missing from Harbor job viewer
+- Forgetting `pytest-json-ctrf` in `--with` list → `--ctrf` flag not recognised, tests appear to pass but no CTRF output written
+- Using `curl .../uv/install.sh | sh` in test.sh on modal/cloud environments → GitHub download may be blocked or reset; use `pip install pytest ... --quiet` directly instead of uvx to avoid the dependency
+- Catching `McpError` from the mcp SDK when using anyio — Python 3.11+ wraps it in `ExceptionGroup` from the TaskGroup; use `except Exception` to catch both forms
 - Putting `network_mode` on `[agent]` expecting it to apply at env start → use
   `[environment].network_mode` for the baseline; agent/verifier fields are phase overrides
 - Phase override differs from baseline on Docker → task rejected unless provider supports

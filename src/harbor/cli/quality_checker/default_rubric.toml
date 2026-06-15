@@ -1,7 +1,7 @@
 [[criteria]]
 name = "behavior_in_task_description"
 description = "Whether all behavior checked in the test script is described in the task instruction"
-guidance = "All behavior that tests verify should be clearly described in instruction.md. PASS if the instruction explicitly covers what tests check (including filenames, schema, exact commands or interfaces when relevant). FAIL if tests require details not specified or only implied by examples."
+guidance = "All behavior that tests verify should be clearly described in instruction.md. PASS if the instruction explicitly covers what tests check (including filenames, schema, exact commands or interfaces when relevant). PASS also if the instruction references a well-known, publicly documented external specification (e.g. an official API such as OpenAI or Anthropic, an RFC, or a published protocol standard) — in that case the agent is expected to consult the external spec, and reproducing it in the instruction would defeat the purpose of the task. FAIL if tests require details not specified, not implied by context, and not derivable from any referenced external spec."
 
 [[criteria]]
 name = "behavior_in_tests"
@@ -21,7 +21,7 @@ guidance = "The agent does not see the solution or tests at run time. Assess whe
 [[criteria]]
 name = "structured_data_schema"
 description = "If the agent produces structured data (e.g. it is tasked with building an API) whether the exact schema is described in the instruction.md or a separate file"
-guidance = "If the task expects structured output (APIs, JSON, CSV, DB schemas), the exact schema must be documented in instruction.md or a clearly referenced spec file. PASS if schema is explicit; FAIL if only examples are given without marking them as normative."
+guidance = "If the task expects structured output (APIs, JSON, CSV, DB schemas), the exact schema must be documented in instruction.md or a clearly referenced spec file. PASS if schema is explicit. PASS also if the schema is defined by a well-known public specification referenced in the instruction (e.g. 'conform to the OpenAI Chat Completions API' or 'follow the Anthropic Messages API') — the public spec is the normative source and the agent is expected to look it up. FAIL if only custom examples are given without marking them as normative and without a reference to an external spec."
 
 [[criteria]]
 name = "pinned_dependencies"
@@ -52,3 +52,19 @@ guidance = "The solution should not just echo/cat the final answer; it should de
 name = "file_reference_mentioned"
 description = "If the agent needs to produce a file to be checked by tests, whether these filenames are mentioned in the instruction.md explicitly."
 guidance = "If the agent must produce files (e.g., output.csv) for tests to check, those filenames should be explicitly stated in instruction.md. PASS if mentioned; FAIL otherwise."
+
+[[criteria]]
+name = "difficulty_appropriate"
+description = "Whether the task's actual complexity matches its declared difficulty level in task.toml, calibrated against the terminal-bench-2-1 benchmark distribution."
+guidance = """Read the difficulty and expert_time_estimate_min fields from task.toml. Calibrate against the terminal-bench-2-1 difficulty distribution:
+
+EASY (terminal-bench median: ~12 min, range 5-60 min):
+Even 'easy' tasks require non-trivial domain-specific knowledge or tooling — e.g. Git internals (finding lost commits via reflog), formal proof systems (Coq tactics), LaTeX typesetting constraints, or legacy language modernization (COBOL). A task that only requires basic scripting with a fixed deterministic input/output (e.g. reading a CSV and computing statistics, writing primes to a file, transposing a matrix) does NOT meet 'easy' — it is below the benchmark floor. Tests should verify more than a single happy-path file match.
+
+MEDIUM (terminal-bench median: ~30 min, range 5-300 min):
+Requires domain knowledge AND system integration or external tooling: implementing a gRPC service, parsing multi-format data with schema mapping, building a compiler extension, cracking a hash, filtering XSS from HTML with a security library, running ML inference. Tests use pytest with multiple scenarios or protocol-level verification.
+
+HARD (terminal-bench median: ~330 min, range 15-2400 min):
+Requires deep specialized expertise: cryptanalysis, bioinformatics assembly, GPU-parallel ML systems, implementing a MIPS interpreter, writing a path tracer, or fixing memory corruption bugs in a real codebase. Instruction is often intentionally terse/ambiguous. Tests verify end-to-end system behavior.
+
+FAIL if: the task is pure scripting (read file → compute → write file) with no domain knowledge required, regardless of declared difficulty. FAIL if declared difficulty is 'medium' or 'hard' but the instruction is trivially single-step and tests only check one output file. PASS if complexity genuinely matches the declared tier."""
