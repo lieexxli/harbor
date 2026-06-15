@@ -69,6 +69,11 @@ def check_command(
         help="Prompt file with instructions for the evaluator agent. Uses built-in default if not specified.",
     ),
     model: str = typer.Option("sonnet", "-m", "--model", help="Model to use"),
+    sdk: str = typer.Option(
+        "claude",
+        "--sdk",
+        help="SDK backend to use: 'claude' (default) or 'codex'",
+    ),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Show agent trace"),
     output: Path | None = typer.Option(
         None, "-o", "--output", help="Write JSON output to file"
@@ -87,6 +92,7 @@ def check_command(
                 rubric_path=rubric,
                 prompt_path=prompt,
                 verbose=verbose,
+                sdk=sdk,
             )
         )
     except (FileNotFoundError, ValueError, RuntimeError) as e:
@@ -120,6 +126,11 @@ def analyze_command(
         help="Prompt file for job-level aggregation (summarizing all trials). Uses built-in default if not specified.",
     ),
     model: str = typer.Option("haiku", "-m", "--model", help="Model to use"),
+    sdk: str = typer.Option(
+        "claude",
+        "--sdk",
+        help="SDK backend to use: 'claude' (default) or 'codex'",
+    ),
     n_concurrent: int = typer.Option(
         5,
         "-n",
@@ -173,6 +184,7 @@ def analyze_command(
         job_prompt_path=job_prompt,
         n_concurrent=n_concurrent,
         verbose=verbose,
+        sdk=sdk,
     )
 
     try:

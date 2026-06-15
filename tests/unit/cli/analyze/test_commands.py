@@ -38,6 +38,35 @@ class TestCheckCommand:
         output = " ".join(result.output.split())
         assert "not a valid task directory" in output
 
+    @pytest.mark.unit
+    def test_check_sdk_passed_to_run_check(self, tmp_path):
+        """Check command accepts --sdk and forwards it to run_check."""
+        task_dir = tmp_path / "task"
+        task_dir.mkdir()
+        (task_dir / "instruction.md").write_text("Do the thing.")
+        (task_dir / "task.toml").write_text("")
+        (task_dir / "tests").mkdir()
+
+        from harbor.analyze.models import QualityCheckResult
+
+        mock_run_check = AsyncMock(
+            return_value=QualityCheckResult(
+                checks={
+                    "task_specification": {
+                        "outcome": "pass",
+                        "explanation": "OK",
+                    }
+                }
+            )
+        )
+
+        with patch("harbor.analyze.checker.run_check", mock_run_check):
+            result = runner.invoke(app, ["check", "--sdk", "codex", str(task_dir)])
+
+        assert result.exit_code == 0
+        assert mock_run_check.await_count == 1
+        assert mock_run_check.call_args.kwargs["sdk"] == "codex"
+
 
 def _make_mock_analyzer(mock_result):
     """Create a mock Analyzer class that returns the given result."""
@@ -162,3 +191,30 @@ class TestAnalyzeCommand:
         # Verify n_concurrent was passed to the Analyzer constructor
         mock_cls.assert_called_once()
         assert mock_cls.call_args.kwargs["n_concurrent"] == 7
+
+    @pytest.mark.unit
+    def test_analyze_sdk_passed_to_analyzer(self, tmp_path):
+        """Analyze command accepts --sdk and forwards it to Analyzer."""
+        trial_dir = tmp_path / "trial"
+        trial_dir.mkdir()
+        (trial_dir / "trial.log").write_text("")
+        (trial_dir / "result.json").write_text(json.dumps({"task_name": "test"}))
+
+        from harbor.analyze.models import AnalyzeResult
+
+        mock_result = AnalyzeResult(
+            trial_name="trial",
+            summary="Agent solved it",
+            checks={
+                "reward_hacking": {"outcome": "pass", "explanation": "Clean"},
+            },
+        )
+
+        mock_cls, _mock_instance = _make_mock_analyzer(mock_result)
+
+        with patch("harbor.analyze.analyzer.Analyzer", mock_cls):
+            result = runner.invoke(app, ["analyze", "--sdk", "codex", str(trial_dir)])
+
+        assert result.exit_code == 0
+        mock_cls.assert_called_once()
+        assert mock_cls.call_args.kwargs["sdk"] == "codex"

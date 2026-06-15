@@ -1,7 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 
-from harbor.analyze.backend import query_agent
+from harbor.analyze.backend_router import query_agent
 from harbor.analyze.models import (
     QualityCheckResult,
     build_check_response_model,
@@ -21,6 +21,7 @@ async def run_check(
     rubric_path: Path | None = None,
     prompt_path: Path | None = None,
     verbose: bool = False,
+    sdk: str = "claude",
 ) -> QualityCheckResult:
     """Run quality check on a task directory."""
     task_dir = Path(task_dir)
@@ -59,6 +60,7 @@ async def run_check(
         tools=["Read", "Glob", "Grep"],
         output_schema=response_model.model_json_schema(),
         verbose=verbose,
+        sdk=sdk,
     )
 
     parsed = response_model.model_validate(result)

@@ -1,0 +1,11 @@
+[judge]
+judge = "claude-code"
+model = "anthropic/claude-sonnet-4-6"
+
+[[criterion]]
+name = "funny"
+description = "Rate how funny this poem is from 0.0 to 1.0."
+type = "numeric"
+min = 0.0
+max = 1.0
+weight = 1.0

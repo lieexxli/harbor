@@ -4,7 +4,7 @@ This example demonstrates how to use environment variables in the verifier to im
 
 ## Overview
 
-Instead of traditional pass/fail tests, this task uses an LLM (Claude) to evaluate the agent's implementation based on how funny its poem is.
+Instead of traditional pass/fail tests, this task uses an LLM (DeepSeek via OpenRouter) to evaluate the agent's implementation based on how funny its poem is.
 
 ## Configuration
 
@@ -12,8 +12,8 @@ The task uses the new `verifier.env` configuration in [task.toml](task.toml):
 
 ```toml
 [verifier.env]
-ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"
-MODEL_NAME = "claude-haiku-4-5"
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+MODEL_NAME = "deepseek/deepseek-v4-pro"
 ```
 
 ### Environment Variable Substitution
@@ -28,7 +28,7 @@ MODEL_NAME = "claude-haiku-4-5"
 3. **LLM Evaluation**: The Python script:
    - Reads the task instruction
    - Reads the agent's implementation and logs
-   - Calls Claude API with an evaluation prompt
+   - Calls OpenRouter API (DeepSeek) with an evaluation prompt
    - Parses the LLM's structured response
 4. **Reward Output**: Writes scores to `/logs/verifier/reward.json`
 
@@ -36,10 +36,10 @@ MODEL_NAME = "claude-haiku-4-5"
 
 ### Prerequisites
 
-Set your Anthropic API key:
+Set your OpenRouter API key:
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
+export OPENROUTER_API_KEY="sk-or-v1-..."
 ```
 
 ### Run with Oracle Agent
@@ -51,7 +51,7 @@ harbor run -p examples/tasks/llm-judge-example --agent oracle
 ### Run with Any Agent
 
 ```bash
-harbor run -p examples/tasks/llm-judge-example --agent terminus-2 --model anthropic/claude-haiku-4-5
+harbor run -p examples/tasks/llm-judge-example --agent terminus-2 --model openrouter/deepseek/deepseek-v4-pro
 ```
 
 ## Customizing for Your Tasks

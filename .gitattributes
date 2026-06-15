@@ -1,0 +1,4 @@
+# Shell scripts must always check out with LF line endings.
+# CRLF corrupts the shebang line (e.g. "#!/bin/bash\r"), which Linux containers
+# fail to execute with "cannot execute: required file not found".
+*.sh text eol=lf

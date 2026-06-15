@@ -1,17 +1,17 @@
 schema_version = "1.1"
 
 [task]
-name = "harbor/llm-judge-example"
+name = "harbor/agent-judge-example"
 description = ""
 authors = []
-keywords = []
+keywords = ["poetry", "agent-as-a-judge", "rewardkit"]
 
 [metadata]
 author_name = "Alex Shaw"
 author_email = "alexgshaw64@gmail.com"
 difficulty = "easy"
 category = "poetry"
-tags = ["poetry", "llm-as-a-judge"]
+tags = ["poetry", "agent-as-a-judge", "rewardkit"]
 
 [verifier]
 timeout_sec = 900.0
@@ -28,8 +28,7 @@ gpus = 0
 mcp_servers = []
 
 [verifier.env]
-OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
-MODEL_NAME = "deepseek/deepseek-v4-pro"
+CLAUDE_CODE_OAUTH_TOKEN = "${CLAUDE_CODE_OAUTH_TOKEN}"
 
 [environment.env]
 

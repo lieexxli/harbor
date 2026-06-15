@@ -83,6 +83,7 @@ class AnalysisConfig:
     response_model: type[BaseModel]
     model: str
     verbose: bool
+    sdk: str = "claude"
 
 
 def build_criteria_guidance(rubric: Rubric) -> str:

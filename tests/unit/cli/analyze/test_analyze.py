@@ -199,7 +199,9 @@ class TestAnalyzer:
                 # Job aggregation call (free text, no schema)
                 return "Job summary: all trials passed.", 0.005
 
-        async def mock_query_llm(prompt, model, output_schema=None, verbose=False):
+        async def mock_query_llm(
+            prompt, model, output_schema=None, verbose=False, **kwargs
+        ):
             nonlocal call_count
             call_count += 1
             return "Job summary: all trials passed.", 0.005
@@ -252,7 +254,9 @@ class TestAnalyzer:
                 return result, 0.01
             return "Job summary", 0.005
 
-        async def mock_query_llm(prompt, model, output_schema=None, verbose=False):
+        async def mock_query_llm(
+            prompt, model, output_schema=None, verbose=False, **kwargs
+        ):
             return "Job summary", 0.005
 
         async def on_trial_complete(result: AnalyzeResult | None) -> None:
@@ -340,6 +344,37 @@ class TestAnalyzer:
             await analyzer.analyze_trial(trial_dir)
 
         assert captured_model == "opus"
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_passes_sdk_argument(self, tmp_path):
+        """Verify the sdk argument is forwarded to query_agent."""
+        trial_dir = _make_trial_dir(tmp_path)
+
+        captured_sdk = None
+
+        async def mock_query_agent(
+            prompt,
+            model,
+            cwd,
+            tools=None,
+            add_dirs=None,
+            output_schema=None,
+            verbose=False,
+            sdk="claude",
+        ):
+            nonlocal captured_sdk
+            captured_sdk = sdk
+            return MOCK_ANALYZE_RESULT, 0.02
+
+        with patch(
+            "harbor.analyze.analyzer.query_agent",
+            side_effect=mock_query_agent,
+        ):
+            analyzer = Analyzer(sdk="codex")
+            await analyzer.analyze_trial(trial_dir)
+
+        assert captured_sdk == "codex"
 
     @pytest.mark.unit
     @pytest.mark.asyncio

@@ -1,6 +1,6 @@
 # /// script
 # dependencies = [
-#   "anthropic>=0.75.0",
+#   "openai>=1.0.0",
 #   "pydantic==2.12.5",
 # ]
 # ///
@@ -12,7 +12,7 @@ import json
 import os
 from pathlib import Path
 
-from anthropic import Anthropic, transform_schema
+from openai import OpenAI
 from pydantic import BaseModel, Field
 
 
@@ -30,14 +30,21 @@ class FunnyScoreResponse(BaseModel):
 def main():
     poem = Path("/app/poem.txt").read_text()
 
-    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = OpenAI(
+        api_key=os.getenv("OPENROUTER_API_KEY"),
+        base_url="https://openrouter.ai/api/v1",
+    )
 
-    schema = transform_schema(FunnyScoreResponse.model_json_schema())
-
-    response = client.messages.create(
+    response = client.chat.completions.create(
         model=os.getenv("MODEL_NAME"),
         max_tokens=1024,
-        output_config={"format": {"type": "json_schema", "schema": schema}},
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": "funny_score",
+                "schema": FunnyScoreResponse.model_json_schema(),
+            },
+        },
         messages=[
             {
                 "role": "user",
@@ -49,7 +56,7 @@ Poem:
         ],
     )
 
-    result = FunnyScoreResponse.model_validate_json(response.content[0].text)
+    result = FunnyScoreResponse.model_validate_json(response.choices[0].message.content)
     funny_score = result.funny_score
     print(f"Funny score: {funny_score}")
 

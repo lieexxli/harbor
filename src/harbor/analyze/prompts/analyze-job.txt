@@ -1,4 +1,6 @@
-Here are the analysis results for individual trials from a job run:
+Here are the analysis results for individual trials from a job run.
+
+{filter_context}
 
 {trial_results}
 

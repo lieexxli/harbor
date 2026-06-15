@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
-from harbor.analyze.backend import query_agent, query_llm
+from harbor.analyze.backend_router import query_agent, query_llm
 from harbor.analyze.models import (
     AnalysisConfig,
     AnalyzeResult,
@@ -96,6 +96,7 @@ class Analyzer:
         job_prompt_path: Path | None = None,
         n_concurrent: int = 5,
         verbose: bool = False,
+        sdk: str = "claude",
     ):
         prompt_template = (
             prompt_path.read_text()
@@ -110,6 +111,7 @@ class Analyzer:
             response_model=build_response_model(rubric),
             model=model,
             verbose=verbose,
+            sdk=sdk,
         )
         self._job_prompt_path = job_prompt_path
         self._n_concurrent = n_concurrent
@@ -162,6 +164,7 @@ class Analyzer:
             add_dirs=[str(task_dir)] if task_dir_exists else None,
             output_schema=self._config.response_model.model_json_schema(),
             verbose=self._config.verbose,
+            sdk=self._config.sdk,
         )
 
         try:
@@ -265,7 +268,9 @@ class Analyzer:
             )
             return job_result, failed_trials
 
-        job_result = await self._aggregate(trial_results, job_dir)
+        job_result = await self._aggregate(
+            trial_results, job_dir, filter_passing=filter_passing
+        )
 
         # Write job-level analysis files
         job_dir.joinpath("analysis.md").write_text(
@@ -289,6 +294,7 @@ class Analyzer:
         self,
         trial_results: list[AnalyzeResult],
         job_dir: Path,
+        filter_passing: bool | None = None,
     ) -> JobAnalyzeResult:
         """Aggregate per-trial results into a job-level summary."""
         trial_summaries = []
@@ -299,17 +305,36 @@ class Analyzer:
                 f"  Checks:\n{r.format_checks_text()}"
             )
 
+        if filter_passing is False:
+            filter_context = (
+                f"NOTE: These {len(trial_results)} trials are pre-filtered to "
+                f"failing only (reward < 1.0 or exception). Passing trials are excluded. "
+                f"Do NOT calculate an overall job success rate from this subset."
+            )
+        elif filter_passing is True:
+            filter_context = (
+                f"NOTE: These {len(trial_results)} trials are pre-filtered to "
+                f"passing only (reward = 1.0, no exception). Failing trials are excluded."
+            )
+        else:
+            filter_context = (
+                f"These {len(trial_results)} trials represent the full job run."
+            )
+
         template = (
             self._job_prompt_path.read_text()
             if self._job_prompt_path
             else (PROMPTS_DIR / "analyze-job.txt").read_text()
         )
-        prompt = template.replace("{trial_results}", "\n\n".join(trial_summaries))
+        prompt = template.replace(
+            "{trial_results}", "\n\n".join(trial_summaries)
+        ).replace("{filter_context}", filter_context)
 
         job_summary, aggregation_estimated_cost_usd = await query_llm(
             prompt=prompt,
             model=self._config.model,
             verbose=self._config.verbose,
+            sdk=self._config.sdk,
         )
 
         return JobAnalyzeResult(

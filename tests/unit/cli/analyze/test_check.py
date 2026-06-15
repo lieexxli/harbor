@@ -188,3 +188,25 @@ class TestRunCheckWithMock:
             )
 
         assert "custom_check" in result.checks
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_passes_sdk_argument(self, tmp_path):
+        """Verify run_check forwards sdk to the analysis backend router."""
+        task_dir = _make_task_dir(tmp_path)
+        captured_sdk = None
+
+        async def mock_query_agent(
+            prompt, model, cwd, tools=None, output_schema=None, verbose=False, sdk=None
+        ):
+            nonlocal captured_sdk
+            captured_sdk = sdk
+            return _valid_check_output(), None
+
+        with patch(
+            "harbor.analyze.checker.query_agent",
+            side_effect=mock_query_agent,
+        ):
+            await run_check(task_dir=task_dir, sdk="codex")
+
+        assert captured_sdk == "codex"

@@ -1,5 +1,5 @@
 [judge]
-judge = "anthropic/claude-sonnet-4-6"
+judge = "deepseek/deepseek-v4-pro"
 files = ["/app/textstats.py", "/app/analyze.py"]
 
 [[criterion]]
