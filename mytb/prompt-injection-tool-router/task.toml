@@ -1,0 +1,39 @@
+schema_version = "1.3"
+artifacts = []
+
+[task]
+name = "lieeli/prompt-injection-tool-router"
+description = "Implement a deterministic LLM tool gateway that validates proposed tool calls with schema checks, ACLs, provenance, taint tracking, and confirmation binding."
+keywords = ["llm", "prompt-injection", "tool-calling", "security", "policy-engine", "taint-tracking", "json-schema", "pytest"]
+[[task.authors]]
+name = "lieeli"
+
+[metadata]
+difficulty = "medium"
+category = "llm-security"
+tags = ["llm", "agent-safety", "tool-calling", "prompt-injection", "policy-engine", "python"]
+expert_time_estimate_min = 480.0
+junior_time_estimate_min = 2400.0
+
+[verifier]
+timeout_sec = 180.0
+collect = []
+
+[verifier.env]
+
+[agent]
+timeout_sec = 900.0
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 300.0
+os = "linux"
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+mcp_servers = []
+
+[environment.env]
+
+[solution.env]

@@ -1,0 +1,53 @@
+{
+  "checks": {
+    "behavior_in_task_description": {
+      "explanation": "instruction.md clearly specifies the gateway file, default and explicit CLI invocation, input/output files, output JSONL schema, and the policy semantics that the tests exercise: schema validation, normalization, scopes, ACLs, provenance, taint, external writes, and confirmation binding.",
+      "outcome": "pass"
+    },
+    "behavior_in_tests": {
+      "explanation": "tests/test_outputs.py covers the main required behavior with public and hidden policies: default invocation, strict output shape/order, schema failures, unknown tools, scope revocation, resource ACLs, tenant mismatch, provenance, taint/secret exfiltration, URL/email/path canonicalization, spoofing, and confirmation tokens.",
+      "outcome": "pass"
+    },
+    "informative_test_structure": {
+      "explanation": "The tests are organized into focused pytest functions with clear helper utilities for JSONL IO, gateway invocation, denial assertions, and confirmation assertions. Test names describe the behavioral area being checked.",
+      "outcome": "pass"
+    },
+    "anti_cheating_measures": {
+      "explanation": "The Docker image copies only policy.json and requests.jsonl, while tests and solution are excluded. Hidden tests construct additional policies and requests, which discourages simply matching the public examples.",
+      "outcome": "pass"
+    },
+    "structured_data_schema": {
+      "explanation": "instruction.md gives the exact decisions.jsonl output schema, including allowed decision values, normalized_call nullability, violations, and audit fields. The policy files also expose the JSON-schema-like argument schema format the implementation must interpret.",
+      "outcome": "pass"
+    },
+    "pinned_dependencies": {
+      "explanation": "Verifier dependencies are pinned in tests/test.sh as pytest==8.4.1 and pytest-json-ctrf==0.3.5. The Dockerfile uses python:3.12-slim and installs no unpinned Python packages.",
+      "outcome": "pass"
+    },
+    "typos": {
+      "explanation": "No path, filename, command, or variable typo was found that would cause task confusion or execution failure.",
+      "outcome": "pass"
+    },
+    "tests_or_solution_in_image": {
+      "explanation": "environment/Dockerfile copies only policy.json and requests.jsonl into /app; it does not copy tests/ or solution/.",
+      "outcome": "pass"
+    },
+    "test_deps_in_image": {
+      "explanation": "Test-only dependencies are installed by tests/test.sh during verification, not baked into the runtime image.",
+      "outcome": "pass"
+    },
+    "hardcoded_solution": {
+      "explanation": "solution/solve.sh creates a gateway implementation that reads policy and requests, validates/normalizes inputs, computes confirmation hashes, and writes decisions. It is not just echoing a fixed final output.",
+      "outcome": "pass"
+    },
+    "file_reference_mentioned": {
+      "explanation": "instruction.md explicitly names /app/gateway.py, /app/policy.json, /app/requests.jsonl, and /app/decisions.jsonl, including explicit CLI path flags.",
+      "outcome": "pass"
+    },
+    "difficulty_appropriate": {
+      "explanation": "task.toml declares hard with expert_time_estimate_min = 480. The task requires careful security-policy implementation and broad edge-case handling, but it is still a bounded Python JSON/policy engine rather than the deep specialized or large-system work typical of hard Terminal-Bench tasks. The declared hard tier is overstated.",
+      "outcome": "fail"
+    }
+  },
+  "estimated_cost_usd": null
+}
