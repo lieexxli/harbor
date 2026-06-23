@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from typing import Any
 
@@ -82,21 +81,6 @@ def _render_check_summary(report) -> None:
         console.print(f"[dim]Total agent cost: ${total:.4f}[/dim]")
 
 
-CHECK_RESULT_FILENAME = "check_result.json"
-
-
-def _collect_task_dirs(path: Path) -> list[Path]:
-    """Return task dirs: the path itself if valid, otherwise its valid subdirs."""
-    from harbor.models.task.task import Task
-
-    if not path.exists():
-        raise FileNotFoundError(f"Path '{path}' does not exist")
-    if Task.is_valid_dir(path):
-        return [path]
-    subdirs = sorted(p for p in path.iterdir() if p.is_dir() and Task.is_valid_dir(p))
-    return subdirs
-
-
 def check_command(
     path: Path = typer.Argument(
         ..., help="Path to a task directory or a directory of task directories"
@@ -169,6 +153,8 @@ def check_command(
     """
     from harbor.analyze.checker import run_checks
     from harbor.cli.utils import parse_env_vars, parse_kwargs
+
+    console.print("\n[blue]🔎 Checking task quality...[/blue]")
 
     try:
         report, job_dir = run_async(
@@ -289,7 +275,6 @@ def analyze_command(
         "--environment-kwarg",
         help="Environment kwarg key=value (repeatable)",
     ),
-
     n_concurrent: int = typer.Option(
         4, "-n", "--n-concurrent", help="Max concurrent trial analyses"
     ),
@@ -329,7 +314,6 @@ def analyze_command(
     filter_passing: bool | None = True if passing else (False if failing else None)
 
     console.print("\n[blue]🔍 Analyzing trial(s)...[/blue]")
-
 
     try:
         report, job_dir = run_async(
