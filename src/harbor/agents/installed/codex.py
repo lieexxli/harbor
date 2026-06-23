@@ -995,7 +995,10 @@ class Codex(BaseInstalledAgent):
     ) -> None:
         escaped_instruction = shlex.quote(instruction)
 
-        model = (self.model_name or "gpt-5.5").split("/")[-1]
+        if not self.model_name:
+            raise ValueError("Model name is required")
+
+        model = self.model_name.split("/")[-1]
 
         # Build command with optional CLI config flags from descriptors.
         cli_flags = self.build_cli_flags()
