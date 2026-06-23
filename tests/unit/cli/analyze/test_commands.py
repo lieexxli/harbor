@@ -73,7 +73,6 @@ class TestCheckCommand:
         assert result.exit_code == 0
 
 
-
 def _make_trial_dir(tmp_path, name="trial"):
     trial_dir = tmp_path / name
     trial_dir.mkdir()

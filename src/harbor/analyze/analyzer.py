@@ -6,7 +6,6 @@ from collections import defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-
 from harbor.analyze.models import (
     AnalyzeReport,
     AnalyzeReportResult,
