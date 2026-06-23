@@ -73,7 +73,6 @@ def job_estimated_analyze_cost_usd(job_result: JobAnalyzeResult) -> float | None
     )
 
 
-
 def build_criteria_guidance(rubric: Rubric) -> str:
     """Build criteria guidance text from rubric."""
     return "\n".join(f"- {c.name}: {c.guidance}" for c in rubric.criteria)

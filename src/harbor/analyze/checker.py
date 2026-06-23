@@ -208,7 +208,6 @@ def assemble_check_task(
     return dest
 
 
-
 async def _run_check_job(
     wrappers: list[Path],
     task_name_by_wrapper: dict[str, str],
