@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any
 
 import typer
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
 
@@ -123,6 +124,11 @@ def check_command(
         4, "-n", "--n-concurrent", help="Max concurrent task checks"
     ),
     n_attempts: int = typer.Option(1, "-k", "--n-attempts", help="Attempts per task"),
+    max_retries: int | None = typer.Option(
+        None,
+        "--max-retries",
+        help="Maximum number of retry attempts per task (default: 0)",
+    ),
     include_task_names: list[str] | None = typer.Option(
         None,
         "-i",
@@ -145,6 +151,11 @@ def check_command(
         None, "-c", "--config", help="Base JobConfig (YAML/JSON) for advanced settings"
     ),
     quiet: bool = typer.Option(False, "-q", "--quiet", help="Suppress trial progress"),
+    env_file: Path | None = typer.Option(
+        None,
+        "--env-file",
+        help="Path to a .env file to load into the agent environment.",
+    ),
 ):
     """Check task quality against a rubric.
 
@@ -153,6 +164,12 @@ def check_command(
     """
     from harbor.analyze.checker import run_checks
     from harbor.cli.utils import parse_env_vars, parse_kwargs
+
+    if env_file is not None:
+        if not env_file.exists():
+            console.print(f"[red]❌ Env file not found: {env_file}[/red]")
+            raise typer.Exit(1)
+        load_dotenv(env_file, override=True)
 
     console.print("\n[blue]🔎 Checking task quality...[/blue]")
 
@@ -167,6 +184,7 @@ def check_command(
                 environment=environment,
                 n_concurrent=n_concurrent,
                 n_attempts=n_attempts,
+                max_retries=max_retries,
                 job_name=job_name,
                 jobs_dir=jobs_dir,
                 agent_kwargs=parse_kwargs(agent_kwargs),
@@ -279,6 +297,11 @@ def analyze_command(
         4, "-n", "--n-concurrent", help="Max concurrent trial analyses"
     ),
     n_attempts: int = typer.Option(1, "-k", "--n-attempts", help="Attempts per trial"),
+    max_retries: int | None = typer.Option(
+        None,
+        "--max-retries",
+        help="Maximum number of retry attempts per trial (default: 0)",
+    ),
     passing: bool = typer.Option(
         False, "--passing", help="Only analyze passing trials (reward=1.0)"
     ),
@@ -298,6 +321,11 @@ def analyze_command(
         None, "-c", "--config", help="Base JobConfig (YAML/JSON) for advanced settings"
     ),
     quiet: bool = typer.Option(False, "-q", "--quiet", help="Suppress trial progress"),
+    env_file: Path | None = typer.Option(
+        None,
+        "--env-file",
+        help="Path to a .env file to load into the agent environment.",
+    ),
 ):
     """Analyze trial trajectories against a rubric.
 
@@ -306,6 +334,12 @@ def analyze_command(
     """
     from harbor.analyze.analyzer import run_analyze
     from harbor.cli.utils import parse_env_vars, parse_kwargs
+
+    if env_file is not None:
+        if not env_file.exists():
+            console.print(f"[red]❌ Env file not found: {env_file}[/red]")
+            raise typer.Exit(1)
+        load_dotenv(env_file, override=True)
 
     if passing and failing:
         console.print("[red]❌ Cannot use both --passing and --failing[/red]")
@@ -326,6 +360,7 @@ def analyze_command(
                 environment=environment,
                 n_concurrent=n_concurrent,
                 n_attempts=n_attempts,
+                max_retries=max_retries,
                 filter_passing=filter_passing,
                 job_name=job_name,
                 jobs_dir=jobs_dir,

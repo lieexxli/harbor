@@ -2,7 +2,6 @@ import json
 import sys
 
 import httpx
-import pytest
 
 sys.path.insert(0, "/app")
 
@@ -247,8 +246,12 @@ def test_anthropic_to_oai_tools_definition():
 
 
 def test_extra_kwargs_passed_through_oai_to_anthropic():
-    result = convert([], "openai_to_anthropic", model="claude-opus-4-8", max_tokens=1024)
-    assert result.get("model") == "claude-opus-4-8", "extra kwargs must appear in output"
+    result = convert(
+        [], "openai_to_anthropic", model="claude-opus-4-8", max_tokens=1024
+    )
+    assert result.get("model") == "claude-opus-4-8", (
+        "extra kwargs must appear in output"
+    )
     assert result.get("max_tokens") == 1024
 
 
@@ -295,7 +298,9 @@ def test_sdk_validates_oai_to_anthropic():
 
     body = captured["body"]
     assert "messages" in body, "SDK serialised payload must have 'messages'"
-    assert body.get("system") is not None, "system must be at top level in Anthropic payload"
+    assert body.get("system") is not None, (
+        "system must be at top level in Anthropic payload"
+    )
     roles = [m["role"] for m in body["messages"]]
     assert "system" not in roles, "system role must not appear inside messages array"
 
@@ -318,12 +323,20 @@ def test_sdk_validates_anthropic_to_oai():
                 "choices": [
                     {
                         "index": 0,
-                        "message": {"role": "assistant", "content": "ok", "refusal": None},
+                        "message": {
+                            "role": "assistant",
+                            "content": "ok",
+                            "refusal": None,
+                        },
                         "logprobs": None,
                         "finish_reason": "stop",
                     }
                 ],
-                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+                "usage": {
+                    "prompt_tokens": 1,
+                    "completion_tokens": 1,
+                    "total_tokens": 2,
+                },
             },
         )
 

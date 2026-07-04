@@ -46,6 +46,7 @@ async def run_checks(
     environment: EnvironmentType = EnvironmentType.DOCKER,
     n_concurrent: int = 4,
     n_attempts: int = 1,
+    max_retries: int | None = None,
     job_name: str | None = None,
     jobs_dir: Path | None = None,
     agent_kwargs: dict[str, Any] | None = None,
@@ -101,6 +102,7 @@ async def run_checks(
             environment=environment,
             n_concurrent=n_concurrent,
             n_attempts=n_attempts,
+            max_retries=max_retries,
             job_name=job_name,
             jobs_dir=jobs_dir,
             agent_kwargs=agent_kwargs,
@@ -216,6 +218,7 @@ async def _run_check_job(
     environment: EnvironmentType,
     n_concurrent: int,
     n_attempts: int,
+    max_retries: int | None,
     job_name: str | None,
     jobs_dir: Path | None,
     agent_kwargs: dict[str, Any] | None,
@@ -236,6 +239,8 @@ async def _run_check_job(
     config.n_concurrent_trials = n_concurrent
     config.n_attempts = n_attempts
     config.quiet = quiet
+    if max_retries is not None:
+        config.retry.max_retries = max_retries
     config.agents = [
         AgentConfig(
             name=agent,

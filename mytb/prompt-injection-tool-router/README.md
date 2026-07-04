@@ -4,7 +4,7 @@ This task asks an agent to implement `/app/gateway.py`, a deterministic authoriz
 
 ## Environment
 
-The task uses `python:3.12-slim` with no network access. The image includes:
+The task uses `python:3.12-slim`. The image includes:
 
 - `/app/policy.json`: tool schemas and policy rules.
 - `/app/requests.jsonl`: public authorization requests.

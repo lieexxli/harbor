@@ -3,6 +3,7 @@ import asyncio
 from mcp import StdioServerParameters
 from mcp.client.session import ClientSession
 from mcp.client.stdio import stdio_client
+from mcp.shared.exceptions import McpError
 
 SERVER = StdioServerParameters(command="python", args=["/app/server.py"])
 
@@ -19,6 +20,14 @@ async def _call(name, args):
         async with ClientSession(r, w) as s:
             await s.initialize()
             return await s.call_tool(name, args)
+
+
+def _contains_mcp_error(exc: BaseException) -> bool:
+    if isinstance(exc, McpError):
+        return True
+    if isinstance(exc, ExceptionGroup):
+        return any(_contains_mcp_error(child) for child in exc.exceptions)
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -131,12 +140,13 @@ def test_count_words_empty():
 
 
 def test_unknown_tool_returns_error():
-    """Server must not crash on an unknown tool — return isError:true or raise an error."""
+    """Server must not crash on an unknown tool; only MCP errors are acceptable."""
     try:
         result = asyncio.run(_call("nonexistent_tool", {}))
         assert result.isError is True, (
             "calling an unknown tool must set isError=true in the MCP result"
         )
-    except Exception:
-        # McpError (or ExceptionGroup wrapping it from anyio TaskGroup) is acceptable
-        pass
+    except Exception as exc:
+        # McpError, or an ExceptionGroup wrapping one from anyio TaskGroup, is acceptable.
+        if not _contains_mcp_error(exc):
+            raise

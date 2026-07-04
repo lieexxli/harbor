@@ -3,7 +3,8 @@ set -euo pipefail
 
 pip install tiktoken --quiet
 
-python3 - <<'EOF'
+cat > /app/trim.py <<'PY'
+import argparse
 import json
 from pathlib import Path
 
@@ -21,28 +22,57 @@ def count_tokens(messages):
     return total
 
 
-messages = json.loads(Path("/app/messages.json").read_text())
-budget = json.loads(Path("/app/budget.json").read_text())["max_tokens"]
+def trim(messages, max_tokens):
+    system_msgs = [m for m in messages if m["role"] == "system"]
+    non_system = [m for m in messages if m["role"] != "system"]
 
-original_tokens = count_tokens(messages)
+    while non_system and count_tokens(system_msgs + non_system) > max_tokens:
+        non_system.pop(0)
 
-system_msgs = [m for m in messages if m["role"] == "system"]
-non_system = [m for m in messages if m["role"] != "system"]
+    return system_msgs + non_system
 
-# Drop oldest non-system messages until we fit
-while non_system and count_tokens(system_msgs + non_system) > budget:
-    non_system.pop(0)
 
-trimmed = system_msgs + non_system
-trimmed_tokens = count_tokens(trimmed)
-messages_removed = len(messages) - len(trimmed)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--messages", default="/app/messages.json")
+    parser.add_argument("--budget", default="/app/budget.json")
+    parser.add_argument("--output", default="/app/trimmed.json")
+    parser.add_argument("--stats", default="/app/stats.json")
+    args = parser.parse_args()
 
-Path("/app/trimmed.json").write_text(json.dumps(trimmed, ensure_ascii=False, indent=2))
-Path("/app/stats.json").write_text(json.dumps({
-    "original_tokens": original_tokens,
-    "trimmed_tokens": trimmed_tokens,
-    "messages_removed": messages_removed,
-}, indent=2))
+    messages = json.loads(Path(args.messages).read_text(encoding="utf-8"))
+    budget = json.loads(Path(args.budget).read_text(encoding="utf-8"))["max_tokens"]
 
-print(f"original_tokens={original_tokens}, trimmed_tokens={trimmed_tokens}, messages_removed={messages_removed}")
-EOF
+    original_tokens = count_tokens(messages)
+    trimmed = trim(messages, budget)
+    trimmed_tokens = count_tokens(trimmed)
+    messages_removed = len(messages) - len(trimmed)
+
+    Path(args.output).write_text(
+        json.dumps(trimmed, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    Path(args.stats).write_text(
+        json.dumps(
+            {
+                "original_tokens": original_tokens,
+                "trimmed_tokens": trimmed_tokens,
+                "messages_removed": messages_removed,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    print(
+        f"original_tokens={original_tokens}, "
+        f"trimmed_tokens={trimmed_tokens}, "
+        f"messages_removed={messages_removed}"
+    )
+
+
+if __name__ == "__main__":
+    main()
+PY
+
+python3 /app/trim.py

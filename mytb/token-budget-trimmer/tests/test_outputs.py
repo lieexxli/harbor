@@ -1,8 +1,12 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 import tiktoken
+
+TRIMMER = Path("/app/trim.py")
 
 
 def _count_tokens(messages: list[dict]) -> int:
@@ -36,6 +40,7 @@ def budget():
 
 
 def test_output_files_exist():
+    assert TRIMMER.exists(), "/app/trim.py not found"
     assert Path("/app/trimmed.json").exists(), "trimmed.json not found"
     assert Path("/app/stats.json").exists(), "stats.json not found"
 
@@ -109,3 +114,47 @@ def test_stats_messages_removed(stats, original, trimmed):
     assert stats["messages_removed"] == expected, (
         f"messages_removed should be {expected}, got {stats['messages_removed']}"
     )
+
+
+def test_already_fits_case_is_unchanged(tmp_path):
+    messages = [
+        {"role": "system", "content": "Keep this system prompt."},
+        {"role": "user", "content": "Short question."},
+        {"role": "assistant", "content": "Short answer."},
+    ]
+    budget = {"max_tokens": _count_tokens(messages) + 10}
+
+    messages_path = tmp_path / "messages.json"
+    budget_path = tmp_path / "budget.json"
+    output_path = tmp_path / "trimmed.json"
+    stats_path = tmp_path / "stats.json"
+
+    messages_path.write_text(json.dumps(messages), encoding="utf-8")
+    budget_path.write_text(json.dumps(budget), encoding="utf-8")
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(TRIMMER),
+            "--messages",
+            str(messages_path),
+            "--budget",
+            str(budget_path),
+            "--output",
+            str(output_path),
+            "--stats",
+            str(stats_path),
+        ],
+        check=True,
+        timeout=20,
+    )
+
+    trimmed = json.loads(output_path.read_text(encoding="utf-8"))
+    stats = json.loads(stats_path.read_text(encoding="utf-8"))
+
+    assert trimmed == messages, "already-fitting conversations must be unchanged"
+    assert stats == {
+        "original_tokens": _count_tokens(messages),
+        "trimmed_tokens": _count_tokens(messages),
+        "messages_removed": 0,
+    }

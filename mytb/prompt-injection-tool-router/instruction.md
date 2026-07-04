@@ -47,6 +47,7 @@ Policy semantics:
   - email addresses: lowercase and strip trailing punctuation.
   - URLs: require `https`, reject credentials/userinfo, reject encoded or suffix-spoofed hosts, lowercase host, strip trailing host dot, decode path, reject traversal.
   - paths: decode percent escapes, normalize POSIX-style, require allowed prefixes, reject traversal and backslashes.
+- URL/email/path canonicalization failures, including rejected userinfo, encoded hosts, suffix-spoofed hosts, traversal, invalid schemes, and malformed values, must include `schema_violation`.
 - Enforce scopes: request scopes are `user_grants.scopes - user_grants.revoked_scopes`; tool `required_scopes` must be included.
 - Enforce resource ACLs. For arguments with `resource_ref`, the referenced object must exist in `data_objects`, the user must have the tool's required action for that object, and tenant IDs must match.
 - Enforce provenance. Every argument has an entry in `argument_provenance`. Arguments marked `source = "trusted_user"` must come directly from `user`, not from webpage, email, file, attachment, tool_result, or model_inferred sources.
