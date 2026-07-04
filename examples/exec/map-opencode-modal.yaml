@@ -1,0 +1,23 @@
+# Run with:
+# uv run harbor exec --env-file .env --config examples/exec/map-opencode-modal.yaml
+map:
+  compile:
+    output_dir: exec/tasks
+    instructions:
+      - text: Read topic.md and write a concise answer to answer.md.
+    artifacts:
+      - /app/answer.md
+    environments:
+      - paths:
+          - examples/exec/inputs/topic.md
+    verifiers:
+      - auto_verifier:
+          required_artifacts:
+            - /app/answer.md
+  job:
+    jobs_dir: exec/jobs
+    environment:
+      type: modal
+    agents:
+      - name: opencode
+        model_name: opencode-go/deepseek-v4-flash

@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -410,6 +411,30 @@ def test_exec_print_config_from_flags(tmp_path: Path) -> None:
     assert config.map.job.agents[0].env == {"FOO": "bar"}
     assert config.map.job.environment.type == "docker"
     assert config.map.job.verifier.disable is False
+
+
+def test_exec_env_file_loads_process_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env_path = tmp_path / ".env"
+    env_path.write_text("EXEC_ENV_FILE_TEST_KEY=from-env-file\n", encoding="utf-8")
+    monkeypatch.delenv("EXEC_ENV_FILE_TEST_KEY", raising=False)
+
+    result = runner.invoke(
+        app,
+        [
+            "exec",
+            "--env-file",
+            str(env_path),
+            "--instruction",
+            "Write /app/result.json.",
+            "--print-config",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert os.environ["EXEC_ENV_FILE_TEST_KEY"] == "from-env-file"
+    assert "EXEC_ENV_FILE_TEST_KEY" not in result.output
 
 
 def test_exec_defaults_task_outputs_to_temp_dirs() -> None:

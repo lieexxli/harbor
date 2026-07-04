@@ -8,6 +8,7 @@ from typing import Annotated, Any
 from uuid import uuid4
 
 import typer
+from dotenv import load_dotenv
 from pydantic import ValidationError
 from rich.console import Console
 
@@ -261,6 +262,15 @@ def exec_command(
             show_default=False,
         ),
     ] = False,
+    env_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--env-file",
+            help="Path to a .env file to load before running.",
+            rich_help_panel="Jobs",
+            show_default=False,
+        ),
+    ] = None,
     agent: Annotated[
         str | None,
         typer.Option(
@@ -459,6 +469,12 @@ def exec_command(
     """
 
     try:
+        if env_file is not None:
+            if not env_file.exists():
+                console.print(f"[red]❌ Env file not found: {env_file}[/red]")
+                raise typer.Exit(1)
+            load_dotenv(env_file, override=True)
+
         if config_path is not None:
             _reject_config_flag_mix(
                 paths=paths,
