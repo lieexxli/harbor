@@ -62,7 +62,6 @@ harbor/
 │   │   ├── view.py       # Results viewing
 │   │   ├── admin/        # Admin commands
 │   │   ├── annotator/    # Annotation tools
-│   │   ├── debug_checker/    # Debug tools
 │   │   ├── quality_checker/  # Quality verification
 │   │   ├── template-adapter/ # Adapter templates
 │   │   ├── template-metric/  # Metric templates
@@ -214,6 +213,9 @@ uv run pytest tests/ --cov=src/harbor --cov-report=term-missing
 ### Running Tests
 
 **When verifying changes, only run `uv run pytest tests/unit/` unless the change specifically affects integration-tested code and integration tests are necessary.**
+
+Do not test CLI help panels. Typer/Rich help output changes with terminal width,
+colors, and platform; test command behavior, parser wiring, or callback effects instead.
 
 ```bash
 # Unit tests (default for verifying changes)
