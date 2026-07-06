@@ -202,14 +202,19 @@ class SWEBenchLiveAdapter:
         return sorted(self.loader.all_ids())
 
     def _resource_config(self, rec: SWEBenchLiveRecord) -> HarborResourceConfig:
-        difficulty_timeouts = {
+        verifier_difficulty_timeouts = {
             "easy": 900.0,
             "medium": 1800.0,
             "hard": 3600.0,
         }
-        base_timeout = difficulty_timeouts.get(rec.difficulty.lower(), 1800.0)
-        agent_timeout = base_timeout
-        verifier_timeout = base_timeout
+        agent_difficulty_timeouts = {
+            "easy": 1200.0,
+            "medium": 1800.0,
+            "hard": 3600.0,
+        }
+        difficulty = rec.difficulty.lower()
+        agent_timeout = agent_difficulty_timeouts.get(difficulty, 1800.0)
+        verifier_timeout = verifier_difficulty_timeouts.get(difficulty, 1800.0)
 
         transition_count = len(rec.fail_to_pass) + len(rec.pass_to_pass)
         if transition_count > 1000:
