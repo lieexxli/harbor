@@ -28,10 +28,15 @@ Evaluate each criterion one at a time. For each criterion, cite concrete evidenc
 
 Mandatory review checks:
 - For benchmark_value, compare instruction.md with solution/solution.diff. If the public issue already names the exact file/function, root cause, and implementation recipe, treat the sample as low benchmark value unless the solution requires additional non-obvious reasoning.
+- This is a benchmark_value concern, not task_fairness_no_leakage, unless the information comes from hidden verifier artifacts rather than the public issue text.
 - For small solutions, do not pass merely because a repository file had to be located. Confirm that the fix is not just an obvious one-line API swap, constant/list addition, guard insertion, punctuation fix, or standard idiom replacement directly implied by the issue.
+- For task_fairness_no_leakage, do not treat public issue content, public reproduction steps, public root-cause analysis, or public suggested fixes as hidden leakage by themselves. They may lower benchmark_value if they make the task mechanical, but they are not private-answer leakage.
+- For task_fairness_no_leakage, check whether instruction.md is self-contained enough to solve from the repository. Fail if essential context is only in missing images, external links, PR discussion, issue comments, commit SHAs, attachments, or a linked fixed file.
+- For task_fairness_no_leakage, check contamination risk. Fail if the task points the agent directly at the merged PR, solution commit, release note, full patch, or fixed source file rather than the issue to solve.
 - For issue_test_semantic_alignment, identify the core FAIL_TO_PASS tests that measure the public issue. Also identify any unrelated or incidental FAIL_TO_PASS entries.
 - Do not fail solely because a small minority of FAIL_TO_PASS entries look incidental, if the core issue-aligned FAIL_TO_PASS signal is present and dominates the reward.
 - Fail issue_test_semantic_alignment if the only, majority, or reward-dominating FAIL_TO_PASS signal is unrelated to the public issue, or if solving the public issue reasonably could still fail because the verifier requires an uninferable hidden second bug.
+- For issue_test_semantic_alignment, check for tests that are too narrow, too broad, or too weak: tests should not require gold-patch-only helper names, exact error strings, implementation details, or extra behavior absent from the issue; they also must actually assert the core issue behavior, not merely run nearby files.
 
 Do not modify any files under {task_path}.
 
