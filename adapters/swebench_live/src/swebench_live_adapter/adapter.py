@@ -108,12 +108,6 @@ class HarborResourceConfig:
     gpus: int
 
 
-@dataclass(frozen=True)
-class HarborDifficulty:
-    label: str
-    reason: str
-
-
 class SWEBenchLiveLoader:
     def __init__(self, data_dir: Path) -> None:
         self.data_dir = Path(data_dir)
@@ -207,85 +201,13 @@ class SWEBenchLiveAdapter:
     def get_all_ids(self) -> list[str]:
         return sorted(self.loader.all_ids())
 
-    def _difficulty(self, rec: SWEBenchLiveRecord) -> HarborDifficulty:
-        """Normalize source difficulty into Harbor's coarse easy/medium/hard.
-
-        SWE-bench Live source labels are useful but intentionally rough. Harbor
-        uses difficulty for scheduling and reader expectations, so derive it
-        from patch size plus verifier breadth while keeping simple real issues
-        as valid easy tasks.
-        """
-        stats = rec.patch_stats or {}
-        files = int(stats.get("files") or 0)
-        hunks = int(stats.get("hunks") or 0)
-        lines = int(stats.get("lines") or 0)
-        if not files or not lines:
-            files, hunks, lines = self._patch_shape(rec.patch)
-
-        f2p = len(rec.fail_to_pass)
-        transitions = f2p + len(rec.pass_to_pass)
-
-        hard_signals = 0
-        if lines >= 80:
-            hard_signals += 1
-        if files >= 4:
-            hard_signals += 1
-        if hunks >= 6:
-            hard_signals += 1
-        if f2p >= 5:
-            hard_signals += 1
-        if transitions >= 5000:
-            hard_signals += 1
-
-        if hard_signals >= 2 or lines >= 150:
-            label = "hard"
-            reason = (
-                f"derived from patch/test breadth: {files} files, {hunks} hunks, "
-                f"{lines} changed lines, {f2p} FAIL_TO_PASS, "
-                f"{transitions} total transitions"
-            )
-        elif lines <= 20 and files <= 2 and hunks <= 3 and f2p <= 3:
-            label = "easy"
-            reason = (
-                f"derived from localized patch: {files} files, {hunks} hunks, "
-                f"{lines} changed lines, {f2p} FAIL_TO_PASS"
-            )
-        else:
-            label = "medium"
-            reason = (
-                f"derived from moderate patch/test scope: {files} files, "
-                f"{hunks} hunks, {lines} changed lines, {f2p} FAIL_TO_PASS, "
-                f"{transitions} total transitions"
-            )
-
-        source = rec.difficulty.lower()
-        if source in {"easy", "medium", "hard"} and source != label:
-            reason = f"{reason}; source difficulty was {source}"
-        return HarborDifficulty(label=label, reason=reason)
-
-    @staticmethod
-    def _patch_shape(diff_text: str) -> tuple[int, int, int]:
-        files = hunks = changed = 0
-        for line in diff_text.splitlines():
-            if line.startswith("diff --git "):
-                files += 1
-            elif line.startswith("@@ "):
-                hunks += 1
-            elif line.startswith(("+++", "---")):
-                continue
-            elif line.startswith(("+", "-")):
-                changed += 1
-        return files, hunks, changed
-
-    def _resource_config(
-        self, rec: SWEBenchLiveRecord, difficulty: str
-    ) -> HarborResourceConfig:
+    def _resource_config(self, rec: SWEBenchLiveRecord) -> HarborResourceConfig:
         difficulty_timeouts = {
             "easy": 900.0,
             "medium": 1800.0,
             "hard": 3600.0,
         }
-        base_timeout = difficulty_timeouts.get(difficulty.lower(), 1800.0)
+        base_timeout = difficulty_timeouts.get(rec.difficulty.lower(), 1800.0)
         agent_timeout = base_timeout
         verifier_timeout = base_timeout
 
@@ -364,8 +286,7 @@ class SWEBenchLiveAdapter:
         self, instance_id: str, local_task_id: str, *, overwrite: bool = False
     ) -> Path:
         rec = self.loader.load(instance_id)
-        difficulty = self._difficulty(rec)
-        resources = self._resource_config(rec, difficulty.label)
+        resources = self._resource_config(rec)
         task_dir = self.out_root / local_task_id
         if task_dir.exists():
             if not overwrite:
@@ -386,7 +307,7 @@ class SWEBenchLiveAdapter:
         task_toml = render_literal(
             read_text(self.t_config),
             instance_id=rec.instance_id,
-            difficulty=difficulty.label,
+            difficulty=rec.difficulty,
             agent_timeout=f"{resources.agent_timeout_sec:.1f}",
             verifier_timeout=f"{resources.verifier_timeout_sec:.1f}",
             build_timeout=f"{resources.build_timeout_sec:.1f}",
@@ -406,9 +327,6 @@ class SWEBenchLiveAdapter:
         write_text_lf(paths.dockerfile_path, dockerfile)
 
         config = dict(rec.raw)
-        config["source_difficulty"] = rec.difficulty
-        config["difficulty"] = difficulty.label
-        config["harbor_difficulty_reason"] = difficulty.reason
         config["FAIL_TO_PASS"] = rec.fail_to_pass
         config["PASS_TO_PASS"] = rec.pass_to_pass
         config["parser"] = rec.log_parser
