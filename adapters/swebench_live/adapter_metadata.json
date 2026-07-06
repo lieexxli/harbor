@@ -1,0 +1,32 @@
+[
+  {
+    "adapter_name": "swebench-live",
+    "adapter_builders": [
+      "Harbor Team"
+    ],
+    "original_benchmark": [
+      {
+        "split": "python",
+        "size": 51,
+        "harness": "dataset-provided commands and parser",
+        "supported_agents": null,
+        "adaptable": true,
+        "notes": "Local merged SWE-bench Live parquet data with per-instance Docker images, commands, log parser, and expected test transitions."
+      }
+    ],
+    "harbor_adapter": [
+      {
+        "split": "python",
+        "adapted_benchmark_size": 51,
+        "parity_benchmark_size": null,
+        "parity_sampling_rate": null,
+        "registry_benchmark_size": 51,
+        "added_agents": [],
+        "parity_matching_agents": [],
+        "parity_unmatching_agents": null,
+        "parity_costs": null,
+        "notes": "Initial local adapter. Parity has not yet been run."
+      }
+    ]
+  }
+]

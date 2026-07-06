@@ -1,0 +1,40 @@
+schema_version = "1.1"
+artifacts = []
+
+[task]
+name = "swe-bench-live/swebench-live__{instance_id}"
+description = "SWE-bench Live debugging task."
+authors = [
+    { name = "SWE-bench Live" },
+]
+keywords = ["debugging", "swe-bench-live", "{repo}"]
+
+[metadata]
+difficulty = "{difficulty}"
+category = "debugging"
+source_dataset = "{source_dataset}"
+instance_id = "{instance_id}"
+repository = "{repo}"
+
+[verifier]
+network_mode = "public"
+timeout_sec = {verifier_timeout}
+
+[agent]
+network_mode = "public"
+timeout_sec = {agent_timeout}
+
+[environment]
+build_timeout_sec = {build_timeout}
+cpus = {cpus}
+memory_mb = {memory_mb}
+storage_mb = {storage_mb}
+gpus = {gpus}
+allow_internet = true
+mcp_servers = []
+
+[verifier.env]
+
+[environment.env]
+
+[solution.env]

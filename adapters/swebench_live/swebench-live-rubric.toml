@@ -1,0 +1,60 @@
+# SWE-bench Live post-validation benchmark acceptance rubric.
+#
+# Assumption: source rows have already passed the SWE-bench Live curation,
+# RepoLaunch setup/organize, validation.py, and gold-patch evaluation stages.
+# Do not repeat executable validation here. Focus on whether the converted task is
+# a worthwhile, fair, non-leaking Harbor benchmark sample.
+
+[[criteria]]
+name = "benchmark_value"
+description = "Whether the issue/PR-derived task is worth keeping as a benchmark sample"
+guidance = """This is the primary acceptance gate. Assume validation.py already proved the task is executable and has FAIL_TO_PASS signal. Judge whether it has meaningful benchmark value.
+
+PASS if solving the task requires non-trivial repository understanding: localization, debugging, API/behavior reasoning, library/framework interaction, parser/runtime reasoning, UI behavior reasoning, compatibility analysis, or careful implementation of a requested issue/PR change. Small patches can pass when the diagnosis or behavior change is meaningful.
+
+FAIL if the task is essentially a typo, missing punctuation/quote, trivial string literal edit, obvious one-token config/version bump, mechanical rename, generated-file-only update, or direct copy from the issue text with little to no repository reasoning. FAIL if a competent agent can solve it by editing one visibly broken literal or obvious constant without understanding the codebase. Explain clearly that the failure is about benchmark value, not execution validity."""
+
+[[criteria]]
+name = "task_fairness_no_leakage"
+description = "Whether the agent receives a fair issue/PR task without hidden-answer leakage"
+guidance = """Read instruction.md, tests/config.json, tests/test.patch, and solution/solution.diff.
+
+PASS if instruction.md gives the agent the public issue/PR-facing problem statement and enough context to investigate the repository, while keeping private grading data hidden. It may include symptoms, expected behavior, reproduction snippets, affected APIs, screenshots described in text, and high-level issue/PR context.
+
+FAIL if instruction.md is too vague to identify the target behavior, contradicts the verifier, or leaks the solution: exact implementation patch, exact changed line, exact hidden test name, tests/test.patch contents, FAIL_TO_PASS/PASS_TO_PASS lists, or other private grader details. Also FAIL if the task is unfair because the issue text directly tells the implementation in a way that makes the task trivial."""
+
+[[criteria]]
+name = "issue_test_semantic_alignment"
+description = "Whether hidden tests measure the issue/PR behavior rather than an unrelated or unfair requirement"
+guidance = """Inspect tests/test.patch, tests/config.json, tests/log_parser.py, and instruction.md. Do not rerun tests; validation.py already covered basic executability.
+
+PASS if FAIL_TO_PASS tests exercise the issue/PR-described behavior and PASS_TO_PASS tests are plausible guards against breaking existing behavior. The target can be a bug fix, behavior regression, compatibility change, parser/runtime behavior, UI behavior, small feature, or other real repository code change.
+
+FAIL if tests primarily check behavior unrelated to the issue/PR description, require hidden requirements a coding agent could not infer from the public task, assert brittle implementation details unrelated to user-visible behavior, or use parser/test names that visibly cannot line up with the configured transition lists."""
+
+[[criteria]]
+name = "harbor_evaluator_alignment"
+description = "Whether the Harbor verifier preserves SWE-bench Live evaluation semantics"
+guidance = """Compare tests/run_tests.py and tests/test.sh against SWE-bench Live evaluation.py semantics.
+
+PASS if the Harbor verifier captures the agent's git diff as pred.patch, resets the repository to base_commit, applies test_patch before pred.patch, runs rebuild_cmds, test_cmds, and print_cmds in order, parses the post-patch log with the dataset parser or a compatible pytest fallback, and decides resolved using FAIL_TO_PASS/PASS_TO_PASS in the same spirit as evaluation.py.
+
+FAIL if the verifier evaluates the modified worktree in-place without clean patch replay, ignores rebuild_cmds/test_cmds/print_cmds, changes the resolved rule materially, parses a different artifact than the official print output without a clear compatibility reason, or otherwise makes Harbor reward diverge from SWE-bench Live evaluation."""
+
+[[criteria]]
+name = "adapter_packaging_integrity"
+description = "Whether the converted Harbor task is packaged correctly without exposing verifier artifacts"
+guidance = """Inspect the generated Harbor task files. This is a conversion-quality check, not a source dataset validation check.
+
+PASS if instruction.md, task.toml, environment/Dockerfile, tests/test.sh, tests/run_tests.py, tests/config.json, tests/test.patch, tests/log_parser.py, and solution/solution.diff are present and internally consistent. The Dockerfile should use the dataset-provided per-instance image. tests/ and solution/ should remain Harbor-side artifacts and should not be copied into the agent-visible image.
+
+FAIL if required files are missing, JSON/TOML is invalid, instance_id/repo/base_commit/commands/parser fields disagree, shell scripts have Windows line endings that would break Linux execution, solution or hidden tests are visible during the agent phase, or the adapter visibly dropped important source fields."""
+
+[[criteria]]
+name = "difficulty_and_runtime_fit"
+description = "Whether difficulty and Harbor runtime settings are suitable for the existing SWE-bench Live image"
+guidance = """Read task.toml, environment/Dockerfile, tests/config.json, and solution/solution.diff. Do not use Terminal-Bench difficulty or dependency-pinning standards; judge within SWE-bench Live-style issue/PR code-change tasks that already have per-instance Docker images.
+
+PASS if declared difficulty roughly matches the required code-change effort and the CPU/memory/storage/timeouts are plausible for the dataset-provided image, repo, test commands, and transition count. The Dockerfile should faithfully use the source row's docker_image; do not require re-pinning dependencies or moving test dependencies because SWE-bench Live already evaluates against prepared per-instance images. Easy can still be a valid localized repository task; hard should require broader or deeper reasoning.
+
+FAIL if difficulty is materially misleading, especially if a trivial low-value task is labeled easy/medium/hard as if it were a meaningful benchmark sample. FAIL if the Dockerfile uses the wrong image, resources are clearly too low to run the configured tests, or resources are wildly excessive in a way that hides bad task design."""

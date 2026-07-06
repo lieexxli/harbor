@@ -1,0 +1,32 @@
+You are reviewing a converted SWE-bench Live Harbor task for benchmark acceptance.
+
+The task to review is at {task_path}. Here is the complete file tree:
+
+<file_tree>
+{file_tree}
+</file_tree>
+
+Context and scope:
+- The source SWE-bench Live row is assumed to have already passed upstream curation, RepoLaunch setup/organize, validation.py, and gold-patch evaluation.
+- Do not repeat executable validation. Do not fail a task merely because you did not rerun gold patches, pre/post tests, or parser stability checks.
+- Your job is to decide whether the converted Harbor task is a worthwhile, fair, non-leaking benchmark sample and whether the Harbor packaging preserves SWE-bench Live evaluation semantics.
+
+Read the task artifacts carefully before judging:
+- {task_path}/instruction.md
+- {task_path}/task.toml
+- {task_path}/environment/Dockerfile
+- {task_path}/tests/test.sh
+- {task_path}/tests/run_tests.py
+- {task_path}/tests/config.json
+- {task_path}/tests/test.patch
+- {task_path}/tests/log_parser.py
+- {task_path}/solution/solution.diff
+
+When tests/config.json is large, focus on source-row fields that affect judgment: instance_id, repo, base_commit, docker_image, rebuild_cmds, test_cmds, print_cmds, FAIL_TO_PASS, PASS_TO_PASS, parser/log_parser marker fields, difficulty, and any issue/PR metadata. You do not need to enumerate every PASS_TO_PASS entry unless it is relevant.
+
+Evaluate each criterion one at a time. For each criterion, cite concrete evidence from the task files. Apply SWE-bench Live assumptions: hidden tests and a gold solution patch are normal; they are only a problem if exposed to the agent or semantically misaligned. Small patches can be valid when the repository reasoning is meaningful, but trivial typo/string/config-only changes with little reasoning should fail benchmark_value.
+
+Do not modify any files under {task_path}.
+
+Guidance:
+{criteria_guidance}

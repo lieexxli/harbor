@@ -1,0 +1,27 @@
+[project]
+name = "harbor-swebench-live-adapter"
+version = "0.1.0"
+description = "Harbor adapter for SWE-bench Live parquet datasets"
+readme = "README.md"
+authors = [
+    { name = "Harbor Team" },
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.0.0",
+    "pyarrow>=15.0.0",
+]
+
+[project.scripts]
+swebench-live = "swebench_live_adapter.main:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["swebench_live_adapter", "swebench_live_adapter.*"]
+
+[tool.setuptools.package-data]
+swebench_live_adapter = ["task-template/**/*"]
