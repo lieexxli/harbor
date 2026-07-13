@@ -1,0 +1,94 @@
+{
+  "merged_rows": 51,
+  "sources": [
+    {
+      "source_dataset": "swetry1",
+      "rows": 7,
+      "path": "swetry1\\data\\python-00000-of-00001.parquet"
+    },
+    {
+      "source_dataset": "SWE-bench-Live",
+      "rows": 44,
+      "path": "SWE-bench-Live\\data\\python-00000-of-00001.parquet"
+    }
+  ],
+  "removed_before_merge": {
+    "swetry1": [
+      "Breakthrough__PySceneDetect-551",
+      "yaml__pyyaml-937",
+      "more-itertools__more-itertools-1153"
+    ],
+    "SWE-bench-Live": [
+      "llmsresearch__paperbanana-176",
+      "dstackai__dstack-3730",
+      "safishamsi__graphify-759"
+    ]
+  },
+  "current_rows": 25,
+  "post_check_removed": [
+    {
+      "instance_id": "openai__openai-agents-python-3279",
+      "reason": "F2P passes across flash/pro/cursor-auto/codex, but unrelated sandbox P2P consistently fails"
+    },
+    {
+      "instance_id": "openai__openai-agents-python-3318",
+      "reason": "F2P passes across flash/pro/cursor-auto/codex, but unrelated sandbox P2P consistently fails"
+    },
+    {
+      "instance_id": "pylint-dev__pylint-10977",
+      "reason": "Verifier environment uses pytest 9/Python 3.13 and collection fails unless agents modify tests"
+    },
+    {
+      "instance_id": "simonw__datasette-2730",
+      "reason": "Issue text suggests 301 redirect while oracle expects existing 302 behavior, causing task ambiguity"
+    }
+  ],
+  "updated_at": "2026-07-11T00:00:00+08:00",
+  "post_run_removed": [
+    {
+      "instance_id": "ZhuLinsen__daily_stock_analysis-1684",
+      "reason": "Run analysis with both cline/glm-5.2 and cursor/auto found task_specification mismatch: verifier requires hidden logger variable/message-format details (LOGGER, exception_type/status fields) not fully specified by the task instruction."
+    },
+    {
+      "instance_id": "bytedance__deer-flow-2989",
+      "reason": "Run analysis with both cline/glm-5.2 and cursor/auto found task_specification mismatch: public task describes list-runs persistence after restart, while verifier also requires undocumented aget and user_id API behavior."
+    },
+    {
+      "instance_id": "cowrie__cowrie-40227",
+      "reason": "Run analysis with both cline/glm-5.2 and cursor/auto found task_specification mismatch: instruction tells agents to add the guard before the parent dataReceived call, but verifier requires discarding data before bytesReceived is incremented."
+    },
+    {
+      "instance_id": "headroomlabs-ai__headroom-1031",
+      "reason": "Run analysis with both cline/glm-5.2 and cursor/auto found task_specification mismatch: instruction presents additive PEM merge and SSLContext as viable fixes, while verifier accepts only SSLContext return behavior."
+    },
+    {
+      "instance_id": "simonw__datasette-2730",
+      "reason": "Already removed previously: issue text suggests changing redirect to 301, while verifier requires preserving 302 and only adding CORS headers."
+    },
+    {
+      "instance_id": "teng-lin__notebooklm-py-410",
+      "reason": "Run environment starts with a dirty /testbed worktree: tests/unit/cli/test_session.py is modified and report.json is untracked before the agent acts. Both Cursor Claude Sonnet 5 and Codex GPT-5.5 runs reproduced the pre-existing test diff, and pred.patch captured it, so the sample patch/reward signal is contaminated."
+    },
+    {
+      "instance_id": "llmsresearch__paperbanana-160",
+      "reason": "Independent Grok 4.5 xhigh and Claude Opus 4.8 runs exposed a task-specification mismatch: the public instruction requests list/show/delete behavior for run and batch outputs, while hidden FAIL_TO_PASS tests require undocumented exact CLI forms including --plain, --kind batch, and a unified runs command group. Both reasonable alternative implementations failed the same two F2P tests while all 636 P2P tests passed, with no answer-retrieval evidence."
+    },
+    {
+      "instance_id": "aws-cloudformation__cfn-lint-4558",
+      "reason": "Cross-model runs found implementation-specific verification: behaviorally valid missing-schema recovery implementations fail unless ProviderSchemaManager._load_provider_module calls update(force=False) exactly; Claude Fable's reasonable force=True recovery still failed the sole F2P test."
+    },
+    {
+      "instance_id": "pypa__pipx-1803",
+      "reason": "GPT-5.6 Sol and Claude Fable passed both issue-aligned help-command F2P tests but received reward 0 from ten unrelated animation P2P failures; those same P2P tests passed under Cursor Opus, demonstrating unstable environment noise."
+    },
+    {
+      "instance_id": "Textualize__rich-4076",
+      "reason": "Multiple models correctly fixed the public Text.from_ansi trailing-newline behavior, but the verifier additionally requires changing the internal AnsiDecoder.decode contract; public-behavior tests pass while the implementation-bound internal test fails."
+    },
+    {
+      "instance_id": "HKUDS__nanobot-3418",
+      "reason": "The issue explicitly presents adaptive thinking as a valid Opus 4.7 workaround, while the hidden test requires high reasoning to retain enabled thinking. Multiple reasonable implementations following the issue guidance fail this ambiguous binary requirement."
+    }
+  ],
+  "removal_ledger": "harbor-check-notes.md (Removed Samples table) records all 26 post-merge removals with reasons; post_check_removed/post_run_removed here cover only the cross-model-run and post-run-analyze batches."
+}

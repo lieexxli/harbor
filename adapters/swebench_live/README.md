@@ -33,6 +33,21 @@ Use a custom parquet directory or file:
 uv run swebench-live --data-dir ../../SWE-bench-Live-merged/data --output-dir ../../datasets/swebench-live
 ```
 
+## Difficulty curation
+
+Generated `task.toml` files are build artifacts. Do not hand-edit their
+`metadata.difficulty` values as the next conversion will overwrite them.
+
+Curated difficulty changes live in:
+
+```text
+adapters/swebench_live/difficulty-overrides.toml
+```
+
+The adapter applies this file after loading the source parquet row and before
+rendering `task.toml`, `tests/config.json`, and resource timeouts. Use
+`--difficulty-overrides PATH` to test a different override file.
+
 ## Verification
 
 The generated verifier uses the dataset-provided `test_patch`, `rebuild_cmds`, `test_cmds`,
@@ -42,13 +57,21 @@ it first saves the agent's `git diff HEAD --text` as `pred.patch`, resets the re
 SWE-bench Live evaluator's patch replay flow while keeping the task self-contained inside
 Harbor.
 
+Agent execution uses a network allowlist containing only the model service
+endpoints required by the supported agent harnesses (`api.anthropic.com`,
+`api.openai.com`, `chatgpt.com`, `api.cursor.com`, `*.cursor.sh`,
+`api.cline.bot`, `opencode.ai`). General web access, telemetry endpoints,
+error-reporting services, and source-hosting sites such as GitHub remain
+blocked during task solving. Verifier execution keeps `network_mode =
+"public"` so rebuild and test commands can install dependencies.
+
 ## Quality checks
 
 Use the SWE-bench Live specific rubric for Harbor semantic checks:
 
 ```bash
 uv run harbor check datasets/swebench-live-check-requests/psf__requests-7433 \
-  --rubric adapters/swebench_live/swebench-live-rubric.toml \
+  --rubric adapters/swebench_live/swebench-live-check-rubric.toml \
   --prompt adapters/swebench_live/swebench-live-check-prompt.txt
 ```
 

@@ -1,0 +1,4 @@
+[difficulty_overrides]
+# Runtime typing semantics: most tested agents found the location but returned
+# the bare class instead of the required types.GenericAlias.
+more-itertools__more-itertools-1154 = "medium"
