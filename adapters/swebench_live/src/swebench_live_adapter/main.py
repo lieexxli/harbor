@@ -69,6 +69,15 @@ def main() -> None:
         help="Override template directory.",
     )
     parser.add_argument(
+        "--difficulty-overrides",
+        type=Path,
+        default=None,
+        help=(
+            "Optional TOML file with [difficulty_overrides]. By default, the "
+            "adapter reads adapters/swebench_live/difficulty-overrides.toml if present."
+        ),
+    )
+    parser.add_argument(
         "--overwrite",
         action="store_true",
         help="Overwrite target dirs if they already exist.",
@@ -97,6 +106,7 @@ def main() -> None:
         all_tasks=args.all,
         max_timeout_sec=args.timeout,
         template_dir=args.template_dir,
+        difficulty_overrides_path=args.difficulty_overrides,
     )
     adapter.run()
 

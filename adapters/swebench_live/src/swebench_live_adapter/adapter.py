@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -37,6 +38,28 @@ def normalize_for_json(value: Any) -> Any:
     if pd.isna(value):
         return None
     return value
+
+
+def load_difficulty_overrides(path: Path | None) -> dict[str, str]:
+    if path is None or not path.exists():
+        return {}
+
+    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    overrides = data.get("difficulty_overrides", {})
+    if not isinstance(overrides, dict):
+        raise ValueError(f"{path} must define a [difficulty_overrides] table")
+
+    allowed = {"easy", "medium", "hard"}
+    normalized: dict[str, str] = {}
+    for instance_id, difficulty in overrides.items():
+        value = str(difficulty).lower()
+        if value not in allowed:
+            raise ValueError(
+                f"{path}: difficulty override for {instance_id!r} must be one of "
+                f"{sorted(allowed)}, got {difficulty!r}"
+            )
+        normalized[str(instance_id)] = value
+    return normalized
 
 
 @dataclass
@@ -170,6 +193,7 @@ class SWEBenchLiveAdapter:
         all_tasks: bool = True,
         max_timeout_sec: float | None = None,
         template_dir: Path | None = None,
+        difficulty_overrides_path: Path | None = None,
         **kwargs: object,
     ) -> None:
         self.out_root = Path(output_dir)
@@ -183,6 +207,14 @@ class SWEBenchLiveAdapter:
         self.max_timeout = float(max_timeout_sec) if max_timeout_sec else None
         self.template_dir = Path(
             template_dir or (Path(__file__).parent / "task-template")
+        )
+        default_overrides_path = Path(__file__).resolve().parents[2] / (
+            "difficulty-overrides.toml"
+        )
+        self.difficulty_overrides = load_difficulty_overrides(
+            difficulty_overrides_path
+            if difficulty_overrides_path is not None
+            else default_overrides_path
         )
 
         self.t_instruction = self.template_dir / "instruction.md"
@@ -201,6 +233,11 @@ class SWEBenchLiveAdapter:
     def get_all_ids(self) -> list[str]:
         return sorted(self.loader.all_ids())
 
+    def _effective_difficulty(self, rec: SWEBenchLiveRecord) -> str:
+        return self.difficulty_overrides.get(
+            rec.instance_id, rec.difficulty.lower() or "medium"
+        )
+
     def _resource_config(self, rec: SWEBenchLiveRecord) -> HarborResourceConfig:
         verifier_difficulty_timeouts = {
             "easy": 900.0,
@@ -212,7 +249,7 @@ class SWEBenchLiveAdapter:
             "medium": 1800.0,
             "hard": 3600.0,
         }
-        difficulty = rec.difficulty.lower()
+        difficulty = self._effective_difficulty(rec)
         agent_timeout = agent_difficulty_timeouts.get(difficulty, 1800.0)
         verifier_timeout = verifier_difficulty_timeouts.get(difficulty, 1800.0)
 
@@ -291,6 +328,7 @@ class SWEBenchLiveAdapter:
         self, instance_id: str, local_task_id: str, *, overwrite: bool = False
     ) -> Path:
         rec = self.loader.load(instance_id)
+        difficulty = self._effective_difficulty(rec)
         resources = self._resource_config(rec)
         task_dir = self.out_root / local_task_id
         if task_dir.exists():
@@ -312,7 +350,7 @@ class SWEBenchLiveAdapter:
         task_toml = render_literal(
             read_text(self.t_config),
             instance_id=rec.instance_id,
-            difficulty=rec.difficulty,
+            difficulty=difficulty,
             agent_timeout=f"{resources.agent_timeout_sec:.1f}",
             verifier_timeout=f"{resources.verifier_timeout_sec:.1f}",
             build_timeout=f"{resources.build_timeout_sec:.1f}",
@@ -322,6 +360,9 @@ class SWEBenchLiveAdapter:
             gpus=str(resources.gpus),
             source_dataset=rec.source_dataset,
             repo=rec.repo,
+            base_commit=rec.base_commit,
+            pull_number=rec.pull_number,
+            issue_numbers=json.dumps(rec.issue_numbers, ensure_ascii=False),
         )
         write_text_lf(paths.config_path, task_toml)
 
@@ -332,6 +373,7 @@ class SWEBenchLiveAdapter:
         write_text_lf(paths.dockerfile_path, dockerfile)
 
         config = dict(rec.raw)
+        config["difficulty"] = difficulty
         config["FAIL_TO_PASS"] = rec.fail_to_pass
         config["PASS_TO_PASS"] = rec.pass_to_pass
         config["parser"] = rec.log_parser

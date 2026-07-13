@@ -15,13 +15,25 @@ category = "debugging"
 source_dataset = "{source_dataset}"
 instance_id = "{instance_id}"
 repository = "{repo}"
+base_commit = "{base_commit}"
+pull_number = "{pull_number}"
+issue_numbers = {issue_numbers}
 
 [verifier]
 network_mode = "public"
 timeout_sec = {verifier_timeout}
 
 [agent]
-network_mode = "public"
+network_mode = "allowlist"
+allowed_hosts = [
+    "api.cline.bot",
+    "api.cursor.com",
+    "*.cursor.sh",
+    "opencode.ai",
+    "api.openai.com",
+    "chatgpt.com",
+    "api.anthropic.com",
+]
 timeout_sec = {agent_timeout}
 
 [environment]

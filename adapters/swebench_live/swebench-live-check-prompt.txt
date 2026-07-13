@@ -10,6 +10,8 @@ Context and scope:
 - The source SWE-bench Live row is assumed to have already passed upstream curation, RepoLaunch setup/organize, validation.py, and gold-patch evaluation.
 - Do not repeat executable validation. Do not fail a task merely because you did not rerun gold patches, pre/post tests, or parser stability checks.
 - Your job is to decide whether the converted Harbor task is a worthwhile, fair, non-leaking benchmark sample and whether the Harbor packaging preserves SWE-bench Live evaluation semantics.
+- You may use any available context to audit the task. However, judge leakage from the solving agent's perspective. Reviewer internet access does not imply the benchmarked solving agent should be allowed to retrieve upstream answer artifacts.
+- Keep the review focused on benchmark substance: whether the issue, instruction, tests, solution, and reward signal form a meaningful and fair benchmark item. Network policy is a baseline hygiene check.
 
 Read the task artifacts carefully before judging:
 - {task_path}/instruction.md
@@ -26,6 +28,13 @@ When tests/config.json is large, focus on source-row fields that affect judgment
 
 Evaluate each criterion one at a time. For each criterion, cite concrete evidence from the task files. Apply SWE-bench Live assumptions: hidden tests and a gold solution patch are normal; they are only a problem if exposed to the agent or semantically misaligned. Small real bug fixes can be valid benchmark tasks; trivial typo/string/config-only changes with little or no behavior signal should fail benchmark_value. Easy tasks can pass; reject only if the task lacks real behavioral signal or has quality/alignment problems.
 
+Prioritize these questions over boilerplate configuration observations:
+1. Does the public issue describe a real behavior worth measuring?
+2. Do FAIL_TO_PASS tests actually measure that behavior, without unrelated reward-dominating noise?
+3. Could a reasonable alternative implementation pass, or do tests require gold-patch-only details?
+4. Is instruction.md self-contained without leaking private test/solution details or pointing to the upstream answer?
+5. Does the Harbor verifier preserve SWE-bench Live patch-replay semantics?
+
 Mandatory review checks:
 - For benchmark_value, compare instruction.md with solution/solution.diff. Do not fail merely because the issue names files/functions, explains the root cause, or suggests a fix. Fail only when the task is typo/punctuation/string/config churn, a pure constant/list/doc/generated-file update with no real behavior signal, or the issue provides a complete implementation/fixed file that can be copied with almost no adaptation.
 - Distinguish public high-level suggested fixes from complete copyable solutions. Public suggested fixes are normal in SWE-bench-style issues; complete patches, fixed files, or code blocks that directly implement the solution are benchmark_value risks.
@@ -33,6 +42,7 @@ Mandatory review checks:
 - For task_fairness_no_leakage, do not treat public issue content, public reproduction steps, public root-cause analysis, or public suggested fixes as hidden leakage by themselves. They may lower benchmark_value if they make the task mechanical, but they are not private-answer leakage.
 - For task_fairness_no_leakage, check whether instruction.md is self-contained enough to solve from the repository. Fail if essential context is only in missing images, external links, PR discussion, issue comments, commit SHAs, attachments, or a linked fixed file.
 - For task_fairness_no_leakage, check contamination risk. Fail if the task points the agent directly at the merged PR, solution commit, release note, full patch, or fixed source file rather than the issue to solve.
+- For task_fairness_no_leakage, inspect task.toml network policy as a minimum hygiene check. For SWE-bench Live public issue/PR tasks, the solving agent should not have unrestricted public network access that lets it recover the upstream merged PR, fix commit, full patch, or added tests. Treat unrestricted solving-agent public network as a leakage risk. At check time, judge the static task package and configuration: fail if the task text, metadata, task files, or agent-visible artifacts expose private verifier details, direct answer links, upstream fix identifiers, full patches, fixed files, or an unrestricted path to upstream answer artifacts.
 - For issue_test_semantic_alignment, identify the core FAIL_TO_PASS tests that measure the public issue. Also identify any unrelated or incidental FAIL_TO_PASS entries.
 - Do not fail solely because a small minority of FAIL_TO_PASS entries look incidental, if the core issue-aligned FAIL_TO_PASS signal is present and dominates the reward.
 - Fail issue_test_semantic_alignment if the only, majority, or reward-dominating FAIL_TO_PASS signal is unrelated to the public issue, or if solving the public issue reasonably could still fail because the verifier requires an uninferable hidden second bug.
