@@ -71,8 +71,7 @@ Use the SWE-bench Live specific rubric for Harbor semantic checks:
 
 ```bash
 uv run harbor check datasets/swebench-live-check-requests/psf__requests-7433 \
-  --rubric adapters/swebench_live/swebench-live-check-rubric.toml \
-  --prompt adapters/swebench_live/swebench-live-check-prompt.txt
+  --rubric adapters/swebench_live/swebench-live-check-rubric.toml
 ```
 
 This rubric assumes the source rows have already passed SWE-bench Live `validation.py`.

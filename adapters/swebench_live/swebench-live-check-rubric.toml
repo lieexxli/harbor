@@ -1,62 +1,23 @@
 # SWE-bench Live post-validation benchmark acceptance rubric.
-#
-# Assumption: source rows have already passed the SWE-bench Live curation,
-# RepoLaunch setup/organize, validation.py, and gold-patch evaluation stages.
-# Do not repeat executable validation here. Focus on whether the converted task is
-# a worthwhile, fair, non-leaking Harbor benchmark sample.
+# Source rows are assumed to have passed upstream executable validation. These
+# criteria judge the converted Harbor task from static file evidence only.
 
 [[criteria]]
 name = "benchmark_value"
-description = "Whether the issue/PR-derived task is worth keeping as a benchmark sample"
-guidance = """This is the primary acceptance gate. Assume validation.py already proved the task is executable and has FAIL_TO_PASS signal. Judge whether it has meaningful benchmark value.
-
-PASS if the task is a real issue/PR-derived code change with issue-aligned tests and a meaningful repository behavior to fix or implement. Small localized patches can pass, including easy bug fixes, API compatibility fixes, guard insertions, parser tweaks, and small feature additions, provided they are not merely typo/config/punctuation churn and the verifier measures the public issue behavior.
-
-FAIL if the task is essentially a typo, missing punctuation/quote, trivial string literal edit, obvious one-token config/version bump, mechanical rename, generated-file-only update, documentation-only change, or a pure constant/list addition with no real behavior change. FAIL if the task can be solved by copying a complete implementation code block, full patch, or fixed file from the issue text with almost no adaptation. Do not fail benchmark_value merely because the public issue includes root-cause analysis, a high-level suggested fix, exact file/function names, or because the patch is small; SWE-bench-style benchmarks may include simple but real repository bugs. Explain clearly when the failure is about benchmark value rather than execution validity."""
+description = "Whether the task measures a meaningful repository behavior"
+guidance = "PASS if the issue requires a real bug fix, compatibility change, runtime/parser change, or feature, including a small or one-line behavioral patch. FAIL if it is only typo, punctuation, documentation, generated-file, rename, version/config, string, constant, or list churn with no meaningful behavior."
 
 [[criteria]]
-name = "task_fairness_no_leakage"
-description = "Whether the agent receives a fair issue/PR task without hidden-answer leakage"
-guidance = """Read instruction.md, tests/config.json, tests/test.patch, and solution/solution.diff.
-
-PASS if instruction.md gives the agent the public issue/PR-facing problem statement and enough context to make a meaningful solution attempt using the repository alone, while keeping private grading data hidden. It may include symptoms, expected behavior, reproduction snippets, affected APIs, screenshots described in text, public root-cause analysis, public suggested fixes, and high-level issue/PR context. Public issue content is not hidden-answer leakage by itself, even when it makes the task easier.
-
-FAIL if instruction.md is too vague to identify the target behavior, contradicts the verifier, or depends on missing external context such as inaccessible images, external links, PR discussion, commit SHAs, issue comments, or attachments that are necessary to understand the task but are not included in the task text. FAIL if instruction.md leaks private grader details: exact hidden implementation patch, exact hidden changed line not present in the public issue, exact hidden test name, tests/test.patch contents, FAIL_TO_PASS/PASS_TO_PASS lists, or other private verifier details. Also FAIL if the task appears contaminated by pointing the agent directly at the merged PR, solution commit, release note, or full fixed file rather than the issue to solve. If the public issue itself names the file/function/root cause or suggested implementation, judge the resulting mechanical nature under benchmark_value, not task_fairness_no_leakage.
-
-For real public issue/PR benchmarks, also inspect task.toml network policy from the solving agent's perspective as a minimum hygiene check. PASS requires the static task package to be fair and self-contained: no private grader details, no direct pointer to the upstream answer, no missing required context, and no unrestricted public network configuration for the solving agent. FAIL if the converted task exposes private verifier artifacts, includes direct links or identifiers for the upstream answer, or configures the solving agent with an unrestricted path to retrieve merged PRs, fix commits, full patches, added tests, or fixed source files. The reviewer may use internet context to audit the task, but the benchmarked solving agent should not be able to use upstream answer artifacts as part of the run."""
+name = "instruction_self_contained"
+description = "Whether the public task instruction contains enough information to attempt a solution from the repository"
+guidance = "PASS if instruction.md clearly identifies the target behavior and supplies the context needed for a reasonable solution attempt using the local repository. FAIL if essential context needed to understand or reproduce the issue exists only in missing images, links, attachments, issue comments, commit SHAs, or PR discussion. Public symptoms, reproduction steps, file/function names, root-cause analysis, and high-level fix suggestions are allowed."
 
 [[criteria]]
-name = "issue_test_semantic_alignment"
-description = "Whether hidden tests measure the issue/PR behavior rather than an unrelated or unfair requirement"
-guidance = """Inspect tests/test.patch, tests/config.json, tests/log_parser.py, and instruction.md. Do not rerun tests; validation.py already covered basic executability.
-
-PASS if the core FAIL_TO_PASS tests exercise the issue/PR-described behavior and PASS_TO_PASS tests are plausible guards against breaking existing behavior. The target can be a bug fix, behavior regression, compatibility change, parser/runtime behavior, UI behavior, small feature, or other real repository code change. Good tests should be scoped to the issue while allowing reasonable alternative implementations; they should not rely on unnecessary gold-patch implementation details. Do not fail solely because one or a small minority of FAIL_TO_PASS entries appear incidental, provided at least one core FAIL_TO_PASS directly covers the public issue and the unrelated entries are plausibly explained by the same root cause, nearby touched code paths, or validation-captured incidental transitions that do not dominate the reward.
-
-FAIL if the only FAIL_TO_PASS test, the majority of FAIL_TO_PASS tests, or the reward-dominating FAIL_TO_PASS signal checks behavior unrelated to the issue/PR description. FAIL if a reasonable implementation of the public issue could still receive reward 0 because the verifier also requires solving a hidden second bug that is not inferable from the public issue, solution patch, or touched code paths. FAIL if tests primarily check behavior unrelated to the issue/PR description, require hidden requirements a coding agent could not infer from the public task, assert brittle implementation details unrelated to user-visible behavior, depend on a gold-patch helper/function/error message/API name that the issue did not require, or use parser/test names that visibly cannot line up with the configured transition lists. FAIL if the FAIL_TO_PASS tests are too weak to assert the core issue behavior at all, even if they run related files. In the explanation, identify the core issue-aligned FAIL_TO_PASS tests, any too-narrow/too-broad/too-weak test risk, and any incidental/noisy FAIL_TO_PASS entries."""
+name = "upstream_answer_access_blocked"
+description = "Whether the task prevents the solving agent from directly locating or retrieving the upstream fix"
+guidance = "The checker can inspect tests/ and solution/, but these are not visible to the solving agent during normal Harbor execution; do not fail merely because they exist. PASS if agent-visible content neither embeds a complete copyable solution nor identifies or links a merged fix PR, fix commit or diff, release note containing the fix, full patch, or fixed source file, and task.toml restricts solving-agent network access so source-hosting sites and search engines cannot be used to retrieve such artifacts. FAIL for an embedded complete solution, a direct upstream-answer reference, or a solving-agent network policy that permits unrestricted answer lookup."
 
 [[criteria]]
-name = "harbor_evaluator_alignment"
-description = "Whether the Harbor verifier preserves SWE-bench Live evaluation semantics"
-guidance = """Compare tests/run_tests.py and tests/test.sh against SWE-bench Live evaluation.py semantics.
-
-PASS if the Harbor verifier captures the agent's git diff as pred.patch, resets the repository to base_commit, applies test_patch before pred.patch, runs rebuild_cmds, test_cmds, and print_cmds in order, parses the post-patch log with the dataset parser or a compatible pytest fallback, and decides resolved using FAIL_TO_PASS/PASS_TO_PASS in the same spirit as evaluation.py.
-
-FAIL if the verifier evaluates the modified worktree in-place without clean patch replay, ignores rebuild_cmds/test_cmds/print_cmds, changes the resolved rule materially, parses a different artifact than the official print output without a clear compatibility reason, or otherwise makes Harbor reward diverge from SWE-bench Live evaluation."""
-
-[[criteria]]
-name = "adapter_packaging_integrity"
-description = "Whether the converted Harbor task is packaged correctly without exposing verifier artifacts"
-guidance = """Inspect the generated Harbor task files. This is a conversion-quality check, not a source dataset validation check.
-
-PASS if instruction.md, task.toml, environment/Dockerfile, tests/test.sh, tests/run_tests.py, tests/config.json, tests/test.patch, tests/log_parser.py, and solution/solution.diff are present and internally consistent. The Dockerfile should use the dataset-provided per-instance image. tests/ and solution/ should remain Harbor-side artifacts and should not be copied into the agent-visible image.
-
-FAIL if required files are missing, JSON/TOML is invalid, instance_id/repo/base_commit/commands/parser fields disagree, shell scripts have Windows line endings that would break Linux execution, solution or hidden tests are visible during the agent phase, or the adapter visibly dropped important source fields."""
-
-[[criteria]]
-name = "difficulty_and_runtime_fit"
-description = "Whether difficulty and Harbor runtime settings are suitable for the existing SWE-bench Live image"
-guidance = """Read task.toml, environment/Dockerfile, tests/config.json, and solution/solution.diff. Do not use Terminal-Bench difficulty or dependency-pinning standards; judge within SWE-bench Live-style issue/PR code-change tasks that already have per-instance Docker images.
-
-PASS if declared difficulty is within a reasonable coarse bucket for the code-change effort and the CPU/memory/storage/timeouts are plausible for the dataset-provided image, repo, test commands, and transition count. The Dockerfile should faithfully use the source row's docker_image; do not require re-pinning dependencies or moving test dependencies because SWE-bench Live already evaluates against prepared per-instance images. Easy can still be a valid localized repository task, including one-line real bug fixes; minor difficulty disagreement should be noted but should not fail this criterion.
-
-FAIL if difficulty is wildly misleading in a way that would materially harm benchmark use, such as a typo-only task labeled hard or a broad multi-module architectural task labeled easy. FAIL if the Dockerfile uses the wrong image, resources are clearly too low to run the configured tests, or resources are wildly excessive in a way that hides bad task design. Do not fail difficulty merely because benchmark_value is low; use this criterion for difficulty/resource fit."""
+name = "issue_test_alignment"
+description = "Whether hidden tests and the public issue require the same behavior"
+guidance = "Assume upstream executable validation has already established the configured test transitions. PASS if static evidence from instruction.md, tests/config.json, and tests/test.patch shows that FAIL_TO_PASS tests cover the core issue behavior and its material requirements, every reward-relevant test requirement is described by the issue, reasonably implied by it, or a necessary consequence of it, PASS_TO_PASS entries are plausible regression guards, and no test requires gold-patch-specific implementation details. FAIL only when concrete static evidence shows that a reward-required test is clearly unrelated, requires an uninferable second behavior, depends on gold-patch-only names, strings, APIs, or implementation details, or leaves an important issue requirement untested so an incomplete or incorrect solution could still be marked resolved. Base the judgment on test assertions and configured transition lists, not test names alone."
