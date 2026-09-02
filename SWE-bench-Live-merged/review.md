@@ -4,9 +4,9 @@ This local dataset merges the remaining reviewed samples from `swetry1` and `SWE
 
 ## Current State
 
-- Current retained rows: **25** (easy 12 / medium 9 / hard 4)
+- Current retained rows: **22** (easy 11 / medium 8 / hard 3)
 - duplicate `instance_id`: none
-- Post-merge removals (26 total) are recorded per sample in
+- Post-merge removals (29 total) are recorded per sample in
   `harbor-check-notes.md` ("Removed Samples" table); structured entries for
   the cross-model-run and post-run-analyze batches are in `provenance.json`.
 
@@ -45,11 +45,11 @@ The new `difficulty` field is a benchmark task difficulty label with allowed val
 
 These labels estimate solving difficulty for benchmark evaluation and are not mechanically derived from patch size. The rubric is documented in `difficulty-rubric.md`.
 
-Current distribution (25 retained rows, matches `difficulty-distribution.json`):
+Current distribution (22 retained rows, matches `difficulty-distribution.json`):
 
-- `easy`: 12
-- `medium`: 9
-- `hard`: 4
+- `easy`: 11
+- `medium`: 8
+- `hard`: 3
 - `unknown`: 0
 
 Merge-time distribution over the original 51 rows was easy 10 / medium 30 /

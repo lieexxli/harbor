@@ -8,7 +8,7 @@ and that the gold patch resolves the recorded transitions.
 
 ## Current Curated Dataset
 
-Current retained rows: `25`.
+Current retained rows: `22`.
 
 Current Harbor task network policy:
 
@@ -148,8 +148,8 @@ FAIL_TO_PASS tests to pass.
 
 Final local dataset:
 
-- Accepted tasks: `25`
-- Removed tasks: `26`
+- Accepted tasks: `22`
+- Removed tasks: `29`
 
 ## Removed Samples
 
@@ -184,6 +184,9 @@ converted Harbor dataset.
 | `pypa__pipx-1803` | Unrelated, unstable PASS_TO_PASS failures reject correct fixes. | GPT-5.6 Sol and Claude Fable both passed both issue-aligned help-command FAIL_TO_PASS tests. They still received reward 0 because ten unrelated terminal-animation PASS_TO_PASS tests failed. Those animation tests passed in the Cursor Opus run, demonstrating cross-run environment sensitivity unrelated to `pipx help`. |
 | `Textualize__rich-4076` | Hidden test requires an unnecessary internal API change. | Codex, Cursor Opus, GPT-5.6 Sol, and Claude Fable independently fixed the public `Text.from_ansi()` trailing-newline behavior in `rich/text.py`. The public-behavior regression tests pass, but reward remains 0 unless `AnsiDecoder.decode()` is also changed to emit a trailing empty `Text`, an internal contract not required by the issue. The source test patch also contains leftover debug `print()` calls. |
 | `HKUDS__nanobot-3418` | The issue's documented workaround conflicts with the verifier's required behavior. | The issue explicitly proposes converting Opus 4.7 reasoning modes to adaptive thinking while omitting `temperature`; multiple agents followed that workaround and failed because the hidden test requires `high` to remain `thinking.type == "enabled"`. A minimal-change implementation can pass, but the public specification permits both routes, so the binary reward is ambiguous for reasonable solvers. |
+| `canonical__cloud-init-6728` | Hidden test binds the fix to one exact internal call. | The issue requires treating an empty GPT disk reported by `sfdisk` exit code 1 as an empty layout, but the FAIL_TO_PASS test additionally requires `subp.subp(..., rcs=[0, 1])`. A valid implementation that catches and interprets `ProcessExecutionError` directly can satisfy the behavior and still fail. GPT-5.6 Terra passed only because it selected the expected internal call, while GPT-5.6 Sol demonstrated the valid alternative path. |
+| `cowrie__cowrie-40199` | Agent-visible answer artifact and implementation-specific log assertion. | The instruction directly links an attached fixed `insults.py`, exposing an upstream answer artifact. The FAIL_TO_PASS test also requires the exact text `Failed to save stdin contents`, although the issue only requires genuine I/O errors to be logged. GPT-5.6 Terra's silent `OSError` handling was legitimately incomplete, but that run failure does not remove the independent leakage and exact-string fairness defects. |
+| `hgrecco__pint-2318` | FAIL_TO_PASS coverage is materially narrower than the public issue. | The issue explicitly covers Decimal, complex magnitudes, NumPy object arrays, multiple converter classes, and both conversion directions. The sole FAIL_TO_PASS test primarily covers Decimal affine conversion plus the Decimal-registry/float-magnitude mirror case; a partial implementation can receive full binary reward without satisfying the rest of the stated behavior. GPT-5.6 Terra failed a legitimately tested mirror case, but the sample remains under-specified by its reward coverage. |
 
 ## SWE-bench Compatibility Note
 

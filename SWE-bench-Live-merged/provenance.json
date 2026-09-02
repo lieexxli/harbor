@@ -24,7 +24,7 @@
       "safishamsi__graphify-759"
     ]
   },
-  "current_rows": 25,
+  "current_rows": 22,
   "post_check_removed": [
     {
       "instance_id": "openai__openai-agents-python-3279",
@@ -43,7 +43,7 @@
       "reason": "Issue text suggests 301 redirect while oracle expects existing 302 behavior, causing task ambiguity"
     }
   ],
-  "updated_at": "2026-07-11T00:00:00+08:00",
+  "updated_at": "2026-08-06T00:00:00+08:00",
   "post_run_removed": [
     {
       "instance_id": "ZhuLinsen__daily_stock_analysis-1684",
@@ -88,7 +88,19 @@
     {
       "instance_id": "HKUDS__nanobot-3418",
       "reason": "The issue explicitly presents adaptive thinking as a valid Opus 4.7 workaround, while the hidden test requires high reasoning to retain enabled thinking. Multiple reasonable implementations following the issue guidance fail this ambiguous binary requirement."
+    },
+    {
+      "instance_id": "canonical__cloud-init-6728",
+      "reason": "The hidden test requires the exact subp.subp(..., rcs=[0, 1]) call even though directly handling ProcessExecutionError can implement the same required empty-disk behavior."
+    },
+    {
+      "instance_id": "cowrie__cowrie-40199",
+      "reason": "The instruction exposes an attached fixed insults.py, and the hidden test additionally requires one exact log message even though the issue only requires genuine I/O errors to be logged."
+    },
+    {
+      "instance_id": "hgrecco__pint-2318",
+      "reason": "The public issue covers several numeric types, NumPy object arrays, converter classes, and both directions, while the sole F2P test covers only a narrow Decimal affine subset and can reward a partial fix."
     }
   ],
-  "removal_ledger": "harbor-check-notes.md (Removed Samples table) records all 26 post-merge removals with reasons; post_check_removed/post_run_removed here cover only the cross-model-run and post-run-analyze batches."
+  "removal_ledger": "harbor-check-notes.md (Removed Samples table) records all 29 post-merge removals with reasons; post_check_removed/post_run_removed here cover only the cross-model-run and post-run-analyze batches."
 }
